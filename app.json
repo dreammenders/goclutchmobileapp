@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "GoClutch",
+    "slug": "goclutch-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fe5110"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.goclutch.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "GoClutch needs your location to show nearby services and provide accurate doorstep service delivery.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "GoClutch needs your location to show nearby services and provide accurate doorstep service delivery."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#fe5110"
+      },
+      "package": "com.goclutch.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/logo.png"
+    },
+    "plugins": [
+      "expo-location",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8b3ae796-ddf6-4156-9b94-5abadd233225"
+      }
+    }
+  }
+}
