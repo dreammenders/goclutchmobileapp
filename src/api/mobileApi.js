@@ -1,34 +1,77 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
-// Mobile API configuration - Production optimized
-const MOBILE_API_BASE_URL = 'https://mobileapi.goclutchservice.in/api/v1';
+// Mobile API configuration - Auto-detect environment
+const getApiBaseUrl = () => {
+  if (__DEV__) {
+    // Development: Detect platform and use appropriate localhost
+    if (Platform.OS === 'android') {
+      // Android emulator uses 10.0.2.2 to reach host machine
+      return 'http://10.0.2.2:3002/api/v1';
+    } else if (Platform.OS === 'ios') {
+      // iOS simulator can use localhost
+      return 'http://192.168.1.36:3002/api/v1';
+    } else {
+      // Web or other platforms
+      return 'http://localhost:3002/api/v1';
+    }
+  } else {
+    // Production
+    return 'https://mobileapi.goclutchservice.in/api/v1';
+  }
+};
+
+const MOBILE_API_BASE_URL = getApiBaseUrl();
+
+// Log API URL in development
+if (__DEV__) {
+  console.log('🔌 Mobile API Base URL:', MOBILE_API_BASE_URL);
+  console.log('📱 Platform:', Platform.OS);
+}
 
 // Create axios instance for mobile API
 const mobileApiClient = axios.create({
   baseURL: MOBILE_API_BASE_URL,
-  timeout: 15000, // 15 seconds timeout for faster response feedback
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
 
-// Request interceptor - Production optimized (no verbose logging)
+// Request interceptor - Log requests in development
 mobileApiClient.interceptors.request.use(
   (config) => {
+    if (__DEV__) {
+      console.log('📤 API Request:', config.method?.toUpperCase(), config.url);
+    }
     return config;
   },
   (error) => {
+    console.error('❌ Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor - Production optimized (no logging)
+// Response interceptor - Log responses in development
 mobileApiClient.interceptors.response.use(
   (response) => {
+    if (__DEV__) {
+      console.log('📥 API Response:', response.status, response.config.url);
+    }
     return response;
   },
   (error) => {
+    if (__DEV__) {
+      if (!error.response) {
+        console.error('❌ Network Error - Cannot reach:', error.config?.url);
+        console.error('   Base URL:', MOBILE_API_BASE_URL);
+        console.error('   Platform:', Platform.OS);
+        console.error('   Error:', error.message);
+      } else {
+        console.error('❌ API Error:', error.response?.status, error.config?.url, error.message);
+      }
+    }
     return Promise.reject(error);
   }
 );
@@ -277,6 +320,134 @@ export const planApi = {
       throw new Error(`Unable to load plans for this service: ${error.message}`);
     }
   },
+
+  /**
+   * Get service plans with model and variant-specific pricing
+   * Used when user selects a specific car model and fuel variant
+   * Returns pricing tailored to the selected car configuration
+   */
+  getPlansByModelAndVariant: async (modelId, variantId, params = {}) => {
+    try {
+      if (!modelId || modelId.toString().trim().length === 0) {
+        throw new Error('Model ID is required');
+      }
+      if (!variantId || variantId.toString().trim().length === 0) {
+        throw new Error('Variant ID is required');
+      }
+      
+      const { serviceId, limit = 100, offset = 0 } = params;
+      
+      let url = `/plans/model/${modelId}/variant/${variantId}?limit=${limit}&offset=${offset}`;
+      if (serviceId) {
+        url += `&serviceId=${serviceId}`;
+      }
+      
+      const response = await mobileApiClient.get(url);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load plans for this car: ${error.message}`);
+    }
+  },
+};
+
+// Service Offers API functions - Real-time database data only
+export const serviceOfferApi = {
+  /**
+   * Get all service offers from database
+   */
+  getOffers: async (params = {}) => {
+    try {
+      const { limit = 100, offset = 0 } = params;
+      
+      const queryParams = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      });
+      
+      const response = await mobileApiClient.get(`/service-offers?${queryParams}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load service offers from server: ${error.message}`);
+    }
+  },
+
+  /**
+   * Get offers for a specific service from database
+   */
+  getOffersByService: async (serviceId) => {
+    try {
+      if (!serviceId || serviceId.toString().trim().length === 0) {
+        throw new Error('Service ID is required');
+      }
+      
+      const response = await mobileApiClient.get(`/service-offers/service/${serviceId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load offers for this service: ${error.message}`);
+    }
+  },
+};
+
+// Service Banners API functions - Real-time database data only
+export const serviceBannerApi = {
+  /**
+   * Get all service banners from database
+   */
+  getBanners: async (params = {}) => {
+    try {
+      const { limit = 100, offset = 0 } = params;
+      
+      const queryParams = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+      });
+      
+      const response = await mobileApiClient.get(`/service-banners?${queryParams}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load service banners from server: ${error.message}`);
+    }
+  },
+
+  /**
+   * Get banners for a specific service from database
+   */
+  getBannersByService: async (serviceId) => {
+    try {
+      if (!serviceId || serviceId.toString().trim().length === 0) {
+        throw new Error('Service ID is required');
+      }
+      
+      const response = await mobileApiClient.get(`/service-banners/service/${serviceId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load banners for this service: ${error.message}`);
+    }
+  },
+};
+
+// Related Services API functions - Real-time database data only
+export const relatedServiceApi = {
+  /**
+   * Get related/upsell services for a specific service
+   */
+  getRelatedServices: async (serviceId, type = null) => {
+    try {
+      if (!serviceId || serviceId.toString().trim().length === 0) {
+        throw new Error('Service ID is required');
+      }
+      
+      let url = `/related-services/service/${serviceId}`;
+      if (type) {
+        url += `?type=${type}`;
+      }
+      
+      const response = await mobileApiClient.get(url);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load related services: ${error.message}`);
+    }
+  },
 };
 
 // Health check function
@@ -303,6 +474,9 @@ export default {
   specialOfferApi,
   serviceApi,
   planApi,
+  serviceOfferApi,
+  serviceBannerApi,
+  relatedServiceApi,
   checkApiHealth,
   client: mobileApiClient,
   // Convenience methods
@@ -319,4 +493,10 @@ export default {
   getPlans: (...args) => planApi.getPlans(...args),
   getPlanById: (...args) => planApi.getPlanById(...args),
   getPlansByService: (...args) => planApi.getPlansByService(...args),
+  getPlansByModelAndVariant: (...args) => planApi.getPlansByModelAndVariant(...args),
+  getServiceOffers: (...args) => serviceOfferApi.getOffers(...args),
+  getServiceOffersByService: (...args) => serviceOfferApi.getOffersByService(...args),
+  getServiceBanners: (...args) => serviceBannerApi.getBanners(...args),
+  getServiceBannersByService: (...args) => serviceBannerApi.getBannersByService(...args),
+  getRelatedServices: (...args) => relatedServiceApi.getRelatedServices(...args),
 };

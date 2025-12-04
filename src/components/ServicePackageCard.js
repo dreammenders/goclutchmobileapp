@@ -73,6 +73,8 @@ const ServicePackageCard = ({
   discountPercentage,
   imageUrl,
   promoOffer,
+  sessionalOffPrice = 0,
+  sessionalOffText,
   onPress,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -177,8 +179,8 @@ const ServicePackageCard = ({
             {/* Price Display */}
             <View style={styles.priceDisplay}>
               <View style={styles.pricesContainer}>
-                <Text style={styles.originalPrice}>₹{originalPrice.toLocaleString()}</Text>
-                <Text style={styles.discountedPrice}>₹{discountedPrice.toLocaleString()}</Text>
+                {originalPrice && <Text style={styles.originalPrice}>₹{originalPrice.toLocaleString()}</Text>}
+                {discountedPrice && <Text style={styles.discountedPrice}>₹{discountedPrice.toLocaleString()}</Text>}
               </View>
               <Text style={styles.discountInline}>{discountPercentage}% OFF</Text>
             </View>
@@ -197,7 +199,9 @@ const ServicePackageCard = ({
       <View style={styles.offersRow}>
         <View style={styles.savingsText}>
           <MaterialCommunityIcons name="snowflake" size={responsiveSize(14)} color="#FFFFFF" />
-          <Text style={styles.savingsTextContent}>Winter OFF - 200</Text>
+          <Text style={styles.savingsTextContent}>
+            {sessionalOffText ? `${sessionalOffText} - ₹${sessionalOffPrice}` : 'Winter OFF - 200'}
+          </Text>
         </View>
 
         <View style={styles.coinsBadge}>
