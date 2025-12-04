@@ -26,24 +26,82 @@ const responsiveSize = (size) => {
 };
 
 const ServiceDetailsScreen = ({ navigation, route }) => {
-  const { service } = route.params || {};
+  const { service, modelId, variantId } = route.params || {};
   const [plans, setPlans] = useState([]);
+  const [offers, setOffers] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [relatedServices, setRelatedServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [allServices, setAllServices] = useState([]);
 
   useEffect(() => {
-    loadPlans();
-  }, [service]);
+    loadServiceData();
+  }, [service, modelId, variantId]);
+
+  const loadServiceData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        loadPlans(),
+        loadOffers(),
+        loadBanners(),
+        loadRelatedServices(),
+        loadAllServices()
+      ]);
+    } catch (error) {
+      console.error('Error loading service data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadPlans = async () => {
     try {
-      setLoading(true);
-      const plansData = await mobileApi.getPlansByService(service.id);
-      setPlans(plansData || []);
+      let result;
+      if (modelId && variantId) {
+        result = await mobileApi.getPlansByModelAndVariant(modelId, variantId, { serviceId: service.id });
+      } else {
+        result = await mobileApi.getPlansByService(service.id);
+      }
+      setPlans(result?.data?.plans || []);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load service plans');
       console.error('Error loading plans:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadOffers = async () => {
+    try {
+      const result = await mobileApi.getServiceOffersByService(service.id);
+      setOffers(result?.data?.offers || []);
+    } catch (error) {
+      console.error('Error loading offers:', error);
+    }
+  };
+
+  const loadBanners = async () => {
+    try {
+      const result = await mobileApi.getServiceBannersByService(service.id);
+      setBanners(result?.data?.banners || []);
+    } catch (error) {
+      console.error('Error loading banners:', error);
+    }
+  };
+
+  const loadRelatedServices = async () => {
+    try {
+      const result = await mobileApi.getRelatedServices(service.id);
+      setRelatedServices(result?.data?.related || []);
+    } catch (error) {
+      console.error('Error loading related services:', error);
+    }
+  };
+
+  const loadAllServices = async () => {
+    try {
+      const result = await mobileApi.getServices();
+      setAllServices(result?.data?.services || []);
+    } catch (error) {
+      console.error('Error loading all services:', error);
     }
   };
 
@@ -63,60 +121,46 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
   const transformServiceData = () => {
     if (!service) return null;
 
-    // Use first plan if available, otherwise use default values
     const firstPlan = plans.length > 0 ? plans[0] : null;
+    const firstOffer = offers.length > 0 ? offers[0] : null;
+
     const durationMonths = firstPlan?.duration_months || 6;
     const warrantyMonths = firstPlan?.warranty_months || 3;
-    const originalPrice = firstPlan?.price || 4813;
+    const originalPrice = firstPlan?.original_price || firstPlan?.price || 4813;
     const discountedPrice = firstPlan?.discount_price || firstPlan?.price || 3369;
-    const discountPercentage = firstPlan ? getDiscountPercentage(originalPrice, discountedPrice) : 30;
+    const discountPercentage = firstPlan ? (firstPlan.discount_percentage || getDiscountPercentage(originalPrice, discountedPrice)) : 30;
 
-    // Define specific features based on service type
     let serviceFeatures = [];
-    if (service.name === 'AC Service') {
-      serviceFeatures = [
-        'AC gas refill and leak check',
-        'Air filter cleaning & replacement',
-        'Cooling performance test',
-        '6 months warranty coverage'
-      ];
-    } else if (service.name === 'Major Services') {
-      serviceFeatures = [
-        'Comprehensive vehicle inspection',
-        'Engine and transmission diagnostics',
-        'Brake system evaluation',
-        'Electrical system check'
-      ];
-    } else if (service.name === 'Car Detailing') {
-      serviceFeatures = [
-        'Professional paint rubbing & polishing',
-        'Removes scratches and swirl marks',
-        'Restores original paint shine',
-        '3 months warranty coverage'
-      ];
-    } else {
-      // Default features for other services
-      serviceFeatures = [
-        `Every ${durationMonths} Months / ${durationMonths * 10000} Kms`,
-        `Takes ${durationMonths} Hours`,
-        `${warrantyMonths} Months Warranty`,
-        `Includes ${durationMonths * 2} Services`
-      ];
+    if (service.description) {
+      serviceFeatures = service.description.split('\n').filter(item => item.trim().length > 0);
+    }
+
+
+    let promoOffer = {
+      title: "Special Offer",
+      cashback: "Go Clutch Coin Cashback",
+      finalPrice: discountedPrice
+    };
+
+    if (firstOffer) {
+      promoOffer = {
+        title: firstOffer.title || "Special Offer",
+        cashback: firstOffer.cashback_description || "Go Clutch Coin Cashback",
+        finalPrice: discountedPrice - (firstOffer.discount_amount || 0)
+      };
     }
 
     return {
-      isRecommended: true, // You can make this dynamic based on service properties
-      serviceTitle: service.name === 'AC Service' ? 'Standard AC Service' : (service.name === 'Major Services' ? 'Full Car Inspection' : (service.name === 'Denting & Painting' ? 'Single Panel' : (service.name === 'Car Detailing' ? 'Car Rubbing & Polishing' : (service.name || 'Service')))),
+      isRecommended: true,
+      serviceTitle: service.name || 'Service',
       features: serviceFeatures,
       originalPrice: originalPrice,
       discountedPrice: discountedPrice,
       discountPercentage: discountPercentage,
       imageUrl: service.image_url || "https://via.placeholder.com/120x120/FF8C42/FFFFFF?text=SERVICE",
-      promoOffer: {
-        title: "Winter offer - RS. 200",
-        cashback: "Go Clutch Coin Cashback - 100",
-        finalPrice: `Go CLutch Final Discounted Price - ${discountedPrice - 200}`
-      }
+      sessionalOffPrice: service.sessional_off_price || 0,
+      sessionalOffText: service.sessional_off_text || null,
+      promoOffer: promoOffer
     };
   };
 
@@ -137,16 +181,25 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
     },
   ];
 
-  const quickServices = [
-    { id: 1, name: 'Periodic Service', icon: 'wrench' },
-    { id: 2, name: 'Denting & Painting', icon: 'brush' },
-    { id: 3, name: 'Major Services', icon: 'car-cog' },
-    { id: 4, name: 'AC Service', icon: 'air-conditioner' },
-    { id: 5, name: 'Car Detailing', icon: 'car-polish' },
-    { id: 6, name: 'Tyres', icon: 'tire' },
-    { id: 7, name: 'Car Spa & Wash', icon: 'car-wash' },
-    { id: 8, name: 'Clutch & Suspension', icon: 'car-shift-pattern' },
-  ];
+  const getQuickServices = () => {
+    if (allServices.length === 0) {
+      return [
+        { id: 1, name: 'Periodic Service', icon: 'wrench' },
+        { id: 2, name: 'Denting & Painting', icon: 'brush' },
+        { id: 3, name: 'Major Services', icon: 'car-cog' },
+        { id: 4, name: 'AC Service', icon: 'air-conditioner' },
+        { id: 5, name: 'Car Detailing', icon: 'car-polish' },
+        { id: 6, name: 'Tyres', icon: 'tire' },
+      ];
+    }
+    return allServices.map((svc, idx) => ({
+      id: svc.id,
+      name: svc.name,
+      icon: svc.icon_name || 'wrench'
+    }));
+  };
+
+  const quickServices = getQuickServices();
 
   const handleServicePress = (service) => {
     // Navigate to the selected service details
@@ -243,257 +296,91 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
         {/* Hero Banner Carousel */}
         <CarouselBanner banners={heroBanners} autoPlayInterval={3000} />
 
-        {/* Periodic Service Plans Heading */}
-        {/* <View style={styles.plansHeading}>
-          <MaterialCommunityIcons name="calendar-clock" size={24} color={Colors.PRIMARY} />
-          <Text style={styles.plansHeadingTitle}>Periodic Service Plans</Text>
-        </View> */}
-
-        <ServicePackageCard
-          {...serviceData}
-          onPress={() => handleViewDetails(serviceData)}
-        />
-
-        {/* Single Banner for AC Services */}
-        {(service?.name === 'AC Service' || service?.name === 'Car AC\nService') && (
-          <View style={styles.acBannerContainer}>
-            <View style={styles.acBannerContent}>
-              <View style={styles.acBannerIconContainer}>
-                <MaterialCommunityIcons name="air-conditioner" size={50} color="#FFFFFF" />
-              </View>
-              <View style={styles.acBannerTextContainer}>
-                <Text style={styles.acBannerTitle}>🌡️ Premium AC Service</Text>
-                <Text style={styles.acBannerSubtitle}>Beat the heat with expert AC maintenance</Text>
-                <Text style={styles.acBannerDescription}>
-                  • Complete AC system diagnosis{'\n'}
-                  • Gas recharge & leak repair{'\n'}
-                  • Filter cleaning & replacement{'\n'}
-                  • Cooling performance test{'\n'}
-                  • 6 months warranty included
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Premium Services Section */}
-        <View style={styles.premiumServicesSection}>
-          <View style={styles.premiumServicesContainer}>
-            {[
-              {
-                isRecommended: true,
-                serviceTitle: (service?.name === 'Tire Service' || service?.name === 'Tyres') ? 'Tyre Replacement' : (service?.name === 'AC Service' ? 'Premium AC Service' : (service?.name === 'Major Services' ? 'Major Overhauling' : (service?.name === 'Denting & Painting' ? 'Full body Paint' : (service?.name === 'Periodic Service' ? 'Premium Service' : 'Ceramic Coating')))),
-                features: (service?.name === 'Tire Service' || service?.name === 'Tyres') ? [
-                  'Complete tire replacement service',
-                  'Wheel balancing and alignment',
-                  'Tire pressure monitoring',
-                  'Safety inspection included'
-                ] : (service?.name === 'AC Service' ? [
-                  'Complete AC system overhaul',
-                  'Compressor and condenser service',
-                  'Evaporator deep cleaning',
-                  'Advanced leak detection & repair'
-                ] : (service?.name === 'Major Services' ? [
-                  'Complete engine overhauling',
-                  'Transmission system rebuild',
-                  'Suspension and brake overhaul',
-                  'Extended performance warranty'
-                ] : (service?.name === 'Denting & Painting' ? [
-                  'Complete vehicle body painting',
-                  'Color matching and blending',
-                  'Scratch and dent repair',
-                  'Professional finish guarantee'
-                ] : (service?.name === 'Periodic Service' ? [
-                  'Comprehensive vehicle inspection',
-                  'Premium oil and filter replacement',
-                  'Advanced diagnostics and tuning',
-                  'Extended warranty coverage'
-                ] : [
-                  '9H ceramic coating application',
-                  'UV protection & gloss enhancement',
-                  'Hydrophobic properties',
-                  'Long-lasting protection (2 years)'
-                ])))),
-                originalPrice: 8000,
-                discountedPrice: 6400,
-                discountPercentage: 20,
-                imageUrl: service.image_url || "https://via.placeholder.com/120x120/FF8C42/FFFFFF?text=CERAMIC",
-                promoOffer: {
-                  title: "Ceramic offer - RS. 400",
-                  cashback: "Go Clutch Coin Cashback - 200",
-                  finalPrice: `Go CLutch Final Discounted Price - ${6400 - 400}`
-                }
+        {/* Display All Plans */}
+        {plans.length > 0 ? (
+          plans.map((plan, index) => {
+            const planData = {
+              isRecommended: plan.is_popular ? true : false,
+              serviceTitle: plan.name || 'Service Plan',
+              features: plan.description ? plan.description.split('\n').filter(item => item.trim().length > 0) : [],
+              originalPrice: plan.original_price || plan.price,
+              discountedPrice: plan.discount_price || plan.price,
+              discountPercentage: plan.discount_percentage || getDiscountPercentage(plan.original_price || plan.price, plan.discount_price || plan.price),
+              imageUrl: plan.image_url,
+              promoOffer: {
+                title: plan.duration_months && plan.warranty_months ? `Validity: ${plan.duration_months} months | Warranty: ${plan.warranty_months} months` : '',
+                cashback: "Go Clutch Coin Cashback",
+                finalPrice: plan.discount_price || plan.price
               },
-              // Additional cards for car detailing services and tire services
-              ...(service?.name?.toLowerCase().includes('detail') ? [
-                {
-                  isRecommended: false,
-                  serviceTitle: '3M Teflon Coating',
-                  features: [
-                    'Premium 3M Teflon protection',
-                    'Scratch & stain resistance',
-                    'Easy cleaning properties',
-                    '1 year warranty coverage'
-                  ],
-                  originalPrice: 4500,
-                  discountedPrice: 3600,
-                  discountPercentage: 20,
-                  imageUrl: service.image_url || "https://via.placeholder.com/120x120/FF8C42/FFFFFF?text=3M",
-                  promoOffer: {
-                    title: "3M Teflon offer - RS. 250",
-                    cashback: "Go Clutch Coin Cashback - 125",
-                    finalPrice: `Go CLutch Final Discounted Price - ${3600 - 250}`
-                  }
-                },
-                {
-                  isRecommended: false,
-                  serviceTitle: 'PPF Coating',
-                  features: [
-                    'Paint Protection Film application',
-                    'Self-healing properties',
-                    'UV & stone chip protection',
-                    '5 year warranty included'
-                  ],
-                  originalPrice: 12000,
-                  discountedPrice: 9600,
-                  discountPercentage: 20,
-                  imageUrl: service.image_url || "https://via.placeholder.com/120x120/FF8C42/FFFFFF?text=PPF",
-                  promoOffer: {
-                    title: "PPF offer - RS. 600",
-                    cashback: "Go Clutch Coin Cashback - 300",
-                    finalPrice: `Go CLutch Final Discounted Price - ${9600 - 600}`
-                  }
-                }
-              ] : []).concat(
-                (service?.name === 'Tire Service' || service?.name === 'Tyres') ? [
-                  {
-                    isRecommended: false,
-                    serviceTitle: 'Wheel Alignment',
-                    features: [
-                      'Professional wheel alignment service',
-                      'Improved vehicle handling & stability',
-                      'Extended tire lifespan',
-                      'Better fuel efficiency'
-                    ],
-                    originalPrice: 1500,
-                    discountedPrice: 1200,
-                    discountPercentage: 20,
-                    imageUrl: service.image_url || "https://via.placeholder.com/120x120/FF8C42/FFFFFF?text=ALIGNMENT",
-                    promoOffer: {
-                      title: "Alignment offer - RS. 100",
-                      cashback: "Go Clutch Coin Cashback - 50",
-                      finalPrice: `Go CLutch Final Discounted Price - ${1200 - 100}`
-                    }
-                  }
-                ] : []
-              )
-            ].map((premiumService, index) => (
+              sessionalOffPrice: plan.sessional_off_price || 0,
+              sessionalOffText: plan.sessional_off_text || null
+            };
+            return (
               <ServicePackageCard
-                key={index}
-                {...premiumService}
-                onPress={() => handleViewDetails(premiumService)}
+                key={plan.id}
+                {...planData}
+                onPress={() => handleViewDetails(plan)}
               />
-            ))}
-          </View>
-        </View>
+            );
+          })
+        ) : (
+          <ServicePackageCard
+            {...serviceData}
+            onPress={() => handleViewDetails(serviceData)}
+          />
+        )}
 
-        {/* Single Banner for Periodic Service */}
-        {service?.name === 'Periodic Service' && (
-          <View style={styles.singleBannerContainer}>
-            <View style={styles.bannerContent}>
-              <View style={styles.bannerTextContainer}>
-                <Text style={styles.bannerTitle}>🚗 Complete Car Care Package</Text>
-                <Text style={styles.bannerSubtitle}>Get comprehensive maintenance for your vehicle</Text>
-                <Text style={styles.bannerDescription}>
-                  • Engine oil & filter replacement{'\n'}
-                  • Air filter & cabin filter service{'\n'}
-                  • Brake system inspection{'\n'}
-                  • Battery & electrical check{'\n'}
-                  • 6 months warranty coverage
-                </Text>
-              </View>
-              <View style={styles.bannerImageContainer}>
-                <View style={styles.bannerImagePlaceholder}>
-                  <MaterialCommunityIcons name="car-cog" size={60} color={Colors.PRIMARY} />
+        {/* Dynamic Service Banners */}
+        {banners.map((banner, index) => (
+          <View key={banner.id || index} style={styles.acBannerContainer}>
+            <View style={styles.acBannerContent}>
+              {banner.icon_name && (
+                <View style={styles.acBannerIconContainer}>
+                  <MaterialCommunityIcons name={banner.icon_name} size={50} color="#FFFFFF" />
                 </View>
+              )}
+              <View style={styles.acBannerTextContainer}>
+                <Text style={styles.acBannerTitle}>{banner.title}</Text>
+                <Text style={styles.acBannerSubtitle}>{banner.description}</Text>
+                {banner.banner_content && Array.isArray(JSON.parse(banner.banner_content || '[]')) && (
+                  <Text style={styles.acBannerDescription}>
+                    {JSON.parse(banner.banner_content || '[]').map((item, idx) => `• ${item}`).join('\n')}
+                  </Text>
+                )}
               </View>
+            </View>
+          </View>
+        ))}
+
+        {/* Premium Services Section - Dynamic from Related Services */}
+        {relatedServices.length > 0 && (
+          <View style={styles.premiumServicesSection}>
+            <View style={styles.premiumServicesContainer}>
+              {relatedServices.map((relatedService, index) => (
+                <ServicePackageCard
+                  key={relatedService.id || index}
+                  isRecommended={relatedService.relationship_type === 'premium'}
+                  serviceTitle={relatedService.title || relatedService.service_name}
+                  features={relatedService.description ? relatedService.description.split('\n').filter(item => item.trim().length > 0) : []}
+                  originalPrice={relatedService.original_price || relatedService.discounted_price}
+                  discountedPrice={relatedService.discounted_price}
+                  discountPercentage={relatedService.discount_percentage || getDiscountPercentage(relatedService.original_price, relatedService.discounted_price)}
+                  imageUrl={relatedService.image_url || "https://via.placeholder.com/120x120/FF8C42/FFFFFF?text=SERVICE"}
+                  promoOffer={{
+                    title: `Special Offer - RS. ${relatedService.original_price - relatedService.discounted_price}`,
+                    cashback: "Go Clutch Coin Cashback",
+                    finalPrice: relatedService.discounted_price
+                  }}
+                  sessionalOffPrice={relatedService.sessional_off_price || 0}
+                  sessionalOffText={relatedService.sessional_off_text || null}
+                  onPress={() => handleViewDetails(relatedService)}
+                />
+              ))}
             </View>
           </View>
         )}
 
-        {/* Single Banner for Denting & Painting Service */}
-        {(service?.name === 'Denting & Painting' || service?.name === 'Denting &\nPainting') && (
-          <View style={styles.singleBannerContainer}>
-            <View style={styles.bannerContent}>
-              <View style={styles.bannerTextContainer}>
-                <Text style={styles.bannerTitle}>🎨 Premium Paint Protection</Text>
-                <Text style={styles.bannerSubtitle}>Restore your car's perfect finish</Text>
-                <Text style={styles.bannerDescription}>
-                  • Professional dent removal{'\n'}
-                  • Perfect color matching{'\n'}
-                  • Scratch & swirl mark repair{'\n'}
-                  • Multi-layer paint application{'\n'}
-                  • 12 months paint warranty
-                </Text>
-              </View>
-              <View style={styles.bannerImageContainer}>
-                <View style={styles.bannerImagePlaceholder}>
-                  <MaterialCommunityIcons name="brush" size={60} color={Colors.PRIMARY} />
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Single Banner for Major Services */}
-        {service?.name === 'Major Services' && (
-          <View style={styles.singleBannerContainer}>
-            <View style={styles.bannerContent}>
-              <View style={styles.bannerTextContainer}>
-                <Text style={styles.bannerTitle}>🔧 Complete Vehicle Overhaul</Text>
-                <Text style={styles.bannerSubtitle}>Comprehensive maintenance for peak performance</Text>
-                <Text style={styles.bannerDescription}>
-                  • Engine rebuilding & optimization{'\n'}
-                  • Transmission system overhaul{'\n'}
-                  • Suspension & brake replacement{'\n'}
-                  • Electrical system diagnostics{'\n'}
-                  • 24 months extended warranty
-                </Text>
-              </View>
-              <View style={styles.bannerImageContainer}>
-                <View style={styles.bannerImagePlaceholder}>
-                  <MaterialCommunityIcons name="car-cog" size={60} color={Colors.PRIMARY} />
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Single Banner for Tyre Maintenance */}
-        {(service?.name === 'Tyres' || service?.name === 'Tire Service') && (
-          <View style={styles.singleBannerContainer}>
-            <View style={styles.bannerContent}>
-              <View style={styles.bannerTextContainer}>
-                <Text style={styles.bannerTitle}>🛞 Premium Tyre Solutions</Text>
-                <Text style={styles.bannerSubtitle}>Safety and performance on every road</Text>
-                <Text style={styles.bannerDescription}>
-                  • Premium brand tyre replacement{'\n'}
-                  • Computerized wheel alignment{'\n'}
-                  • Advanced balancing technology{'\n'}
-                  • TPMS sensor programming{'\n'}
-                  • 6 months alignment warranty
-                </Text>
-              </View>
-              <View style={styles.bannerImageContainer}>
-                <View style={styles.bannerImagePlaceholder}>
-                  <MaterialCommunityIcons name="tire" size={60} color={Colors.PRIMARY} />
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Premium Periodic Service Layout */}
+        {/* Premium Service Layout */}
         <View style={styles.premiumLayout}>
           {/* Service Benefits Section */}
           <View style={styles.benefitsSection}>
@@ -531,10 +418,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
-    paddingVertical: Spacing.M,
+    paddingVertical: Spacing.XS,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#F0F0F0',
   },
   backButton: {
     padding: Spacing.XS,
@@ -544,7 +431,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: responsiveSize(18),
+    fontSize: responsiveSize(16),
     fontWeight: '600',
     color: '#000000',
   },
@@ -553,16 +440,24 @@ const styles = StyleSheet.create({
   },
   servicesNavigator: {
     backgroundColor: '#FFFFFF',
+<<<<<<< HEAD
     paddingVertical: 0,
+=======
+    paddingVertical: Spacing.S,
+>>>>>>> 7362dbab821bb7903539df1513d6bcc484fdefcd
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
     paddingTop: Spacing.M,
     borderBottomWidth: 0,
     borderBottomColor: '#E0E0E0',
   },
   navigatorTitle: {
-    fontSize: responsiveSize(16),
+    fontSize: responsiveSize(14),
     fontWeight: '600',
+<<<<<<< HEAD
     color: '#000000',
+=======
+    color: '#666666',
+>>>>>>> 7362dbab821bb7903539df1513d6bcc484fdefcd
     marginBottom: Spacing.XS,
   },
   servicesScrollContent: {
@@ -571,11 +466,11 @@ const styles = StyleSheet.create({
   serviceCard: {
     alignItems: 'center',
     backgroundColor: '#F5F5F5',
-    borderRadius: responsiveSize(12),
-    paddingVertical: Spacing.S,
-    paddingHorizontal: Spacing.M,
-    marginRight: Spacing.S,
-    minWidth: responsiveSize(80),
+    borderRadius: responsiveSize(10),
+    paddingVertical: Spacing.XS,
+    paddingHorizontal: Spacing.S,
+    marginRight: Spacing.XS,
+    minWidth: responsiveSize(70),
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
@@ -584,9 +479,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.PRIMARY,
   },
   serviceIconContainer: {
-    width: responsiveSize(40),
-    height: responsiveSize(40),
-    borderRadius: responsiveSize(20),
+    width: responsiveSize(32),
+    height: responsiveSize(32),
+    borderRadius: responsiveSize(16),
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -598,7 +493,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   serviceName: {
-    fontSize: responsiveSize(12),
+    fontSize: responsiveSize(11),
     fontWeight: '500',
     color: '#000000',
     textAlign: 'center',
@@ -807,6 +702,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: responsiveSize(18),
     opacity: 0.9,
+  },
+  plansHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
+    paddingVertical: Spacing.M,
+    backgroundColor: '#F9F9F9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  plansHeadingTitle: {
+    fontSize: responsiveSize(18),
+    fontWeight: '700',
+    color: Colors.TEXT_PRIMARY,
+    marginLeft: Spacing.S,
   },
 });
 
