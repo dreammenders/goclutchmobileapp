@@ -66,10 +66,10 @@ const BANNERS = [
 ];
 
 const TESTIMONIALS = [
-  { id: '1', name: 'Rajesh Kumar', text: 'Excellent service! They arrived in 15 minutes.', rating: 5 },
-  { id: '2', name: 'Priya Singh', text: 'Very professional and helpful team.', rating: 5 },
-  { id: '3', name: 'Amit Patel', text: 'Quick response and resolved issue immediately.', rating: 4 },
-  { id: '4', name: 'Sneha Verma', text: 'Best emergency service in the city!', rating: 5 },
+  { id: '1', name: 'Rajesh Kumar', text: 'GoClutch saved me during a flat tire emergency. Outstanding support!', rating: 5 },
+  { id: '2', name: 'Priya Singh', text: 'Fast, reliable, and professional. Highly recommended service.', rating: 5 },
+  { id: '3', name: 'Amit Patel', text: 'Best roadside assistance I\'ve experienced in India.', rating: 5 },
+  { id: '4', name: 'Sneha Verma', text: 'Emergency support when I needed it most. Thank you GoClutch!', rating: 5 },
 ];
 
 const FALLBACK_REGION = {
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     gap: 8,
   },
   servicesGrid: {
@@ -984,10 +984,10 @@ const styles = StyleSheet.create({
   },
   serviceCard: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     marginHorizontal: 5,
-    marginBottom: 14,
+    marginBottom: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,
@@ -1001,6 +1001,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     overflow: 'hidden',
     position: 'relative',
+    aspectRatio: 1 / 1.1,
   },
   serviceCardActive: {
     borderWidth: 2.5,
@@ -1029,19 +1030,20 @@ const styles = StyleSheet.create({
   serviceIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
     zIndex: 2,
   },
   serviceIconBg: {
-    width: 62,
-    height: 62,
+    width: 70,
+    height: 70,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   serviceIcon: {
-    width: 55,
-    height: 55,
+    width: 60,
+    height: 60,
+    resizeMode: 'contain',
   },
 
 
@@ -1052,7 +1054,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
     width: '100%',
-    marginTop: 10,
+    marginTop: 4,
     zIndex: 2,
   },
   serviceLabelActive: {
@@ -1169,17 +1171,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   testimonialCard: {
-    backgroundColor: Colors.LIGHT_BACKGROUND,
+    backgroundColor: '#FFFFFF',
     borderRadius: Spacing.BORDER_RADIUS_L,
     padding: Spacing.M,
     marginVertical: 0,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
   },
   testimonialHeader: {
     flexDirection: 'row',

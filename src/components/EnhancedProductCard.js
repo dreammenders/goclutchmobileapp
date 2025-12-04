@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Spacing';
@@ -29,6 +30,12 @@ const EnhancedProductCard = ({
   onIncrement,
 }) => {
   const accentColor = '#FF7A3B';
+  
+  const calculateDiscount = () => {
+    const original = originalPrice || Math.round(price * 1.2);
+    const discount = Math.round(((original - price) / original) * 100);
+    return discount;
+  };
 
   return (
     <View style={styles.card}>
@@ -36,34 +43,22 @@ const EnhancedProductCard = ({
       <View style={styles.imageColumn}>
         <View style={[styles.imageGlow, { backgroundColor: `rgba(255, 122, 59, 0.08)` }]} />
         <Image source={image} style={styles.productImage} resizeMode="contain" />
+        <View style={styles.imagePriceSection}>
+          <Text style={styles.imagePriceOriginal}>₹{originalPrice || Math.round(price * 1.2)}</Text>
+          <Text style={[styles.imagePrice, { color: '#1a1a1a' }]}>₹{price}</Text>
+          <View style={[styles.offerBadge, { backgroundColor: '#10B981' }]}>
+            <Text style={styles.offerText}>{calculateDiscount()}% OFF</Text>
+          </View>
+        </View>
       </View>
 
       {/* Right: Details Column */}
       <View style={styles.detailsColumn}>
-        {/* Top: Title and Price */}
+        {/* Top: Title */}
         <View style={styles.titleRow}>
           <Text style={styles.productName} numberOfLines={2}>
             {name}
           </Text>
-          <View style={styles.priceColumn}>
-            <Text style={[styles.price, { color: accentColor }]}>₹{price}</Text>
-            {originalPrice && (
-              <Text style={styles.originalPrice}>₹{originalPrice}</Text>
-            )}
-          </View>
-        </View>
-
-        {/* Rating & Offer Badge Row */}
-        <View style={styles.ratingRow}>
-          <View style={[styles.ratingBadge, { backgroundColor: `rgba(255, 122, 59, 0.15)` }]}>
-            <Ionicons name="star" size={12} color={accentColor} />
-            <Text style={[styles.rating, { color: accentColor }]}>{rating}</Text>
-          </View>
-          {offer && (
-            <View style={[styles.offerBadge, { backgroundColor: accentColor }]}>
-              <Text style={styles.offerText}>{offer}</Text>
-            </View>
-          )}
         </View>
 
         {/* Description */}
@@ -77,13 +72,10 @@ const EnhancedProductCard = ({
             {benefits.map((benefit) => (
               <View
                 key={benefit}
-                style={[
-                  styles.benefitBadge,
-                  { backgroundColor: `rgba(255, 122, 59, 0.2)` },
-                ]}
+                style={styles.benefitBadge}
               >
-                <Ionicons name="checkmark-circle" size={12} color={accentColor} />
-                <Text style={[styles.benefitText, { color: accentColor }]}>
+                <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+                <Text style={[styles.benefitText, { color: Colors.TEXT_PRIMARY }]}>
                   {benefit}
                 </Text>
               </View>
@@ -91,11 +83,25 @@ const EnhancedProductCard = ({
           </View>
         )}
 
+        {/* Rating & Offer Badge Row */}
+        <View style={styles.ratingRow}>
+          <View style={[styles.ratingBadge, { backgroundColor: `rgba(255, 122, 59, 0.15)` }]}>
+            <Ionicons name="star" size={12} color={accentColor} />
+            <Text style={[styles.rating, { color: accentColor }]}>{rating}</Text>
+          </View>
+          {benefits && benefits.length > 1 && (
+            <View style={[styles.ratingBadge, { backgroundColor: `rgba(16, 185, 129, 0.15)` }]}>
+              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
+              <Text style={[styles.rating, { color: '#10B981' }]} numberOfLines={1}>{benefits[1]}</Text>
+            </View>
+          )}
+        </View>
+
         {/* Membership Benefit Line */}
         {membershipBenefit && (
-          <View style={[styles.membershipBenefitRow, { borderLeftColor: accentColor }]}>
-            <Ionicons name="star" size={12} color={accentColor} />
-            <Text style={[styles.membershipBenefitText, { color: accentColor }]}>
+          <View style={[styles.membershipBenefitRow, { borderLeftColor: '#10B981' }]}>
+            <Ionicons name="star" size={12} color="#10B981" />
+            <Text style={[styles.membershipBenefitText, { color: '#10B981' }]}>
               {membershipBenefit}
             </Text>
           </View>
@@ -126,22 +132,29 @@ const EnhancedProductCard = ({
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity
-              style={[styles.addToCartBtn, { backgroundColor: accentColor }]}
-              onPress={() =>
-                onAddToCart({
-                  id,
-                  name,
-                  price,
-                  image,
-                  description,
-                })
-              }
-              activeOpacity={0.85}
+            <LinearGradient
+              colors={['#FF9966', '#FF7A3B']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.addToCartBtn}
             >
-              <Ionicons name="cart" size={16} color={Colors.LIGHT_BACKGROUND} />
-              <Text style={styles.addToCartLabel}>Add to Cart</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.addToCartBtnContent}
+                onPress={() =>
+                  onAddToCart({
+                    id,
+                    name,
+                    price,
+                    image,
+                    description,
+                  })
+                }
+                activeOpacity={0.85}
+              >
+                <Ionicons name="cart" size={16} color="#FFFFFF" />
+                <Text style={[styles.addToCartLabel, { color: '#FFFFFF' }]}>Add to Cart</Text>
+              </TouchableOpacity>
+            </LinearGradient>
           )}
         </View>
       </View>
@@ -167,14 +180,10 @@ const styles = StyleSheet.create({
   },
   imageColumn: {
     width: responsiveSize(130),
-    height: responsiveSize(130),
     marginRight: Spacing.L,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     position: 'relative',
-    borderRadius: responsiveSize(12),
-    backgroundColor: 'rgba(255, 122, 59, 0.08)',
-    overflow: 'hidden',
   },
   imageGlow: {
     position: 'absolute',
@@ -187,16 +196,31 @@ const styles = StyleSheet.create({
     width: responsiveSize(130),
     height: responsiveSize(130),
   },
+  imagePriceSection: {
+    marginTop: Spacing.M,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  imagePrice: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1a1a1a',
+  },
+  imagePriceOriginal: {
+    fontSize: 13,
+    color: Colors.TEXT_SECONDARY,
+    textDecorationLine: 'line-through',
+  },
   detailsColumn: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingVertical: Spacing.XS,
+    paddingVertical: 2,
   },
   titleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.XS,
+    marginBottom: 4,
     gap: Spacing.M,
   },
   productName: {
@@ -209,12 +233,6 @@ const styles = StyleSheet.create({
   priceColumn: {
     alignItems: 'flex-end',
   },
-  price: {
-    fontSize: Typography.BODY_L,
-    fontWeight: '800',
-    minWidth: 70,
-    textAlign: 'right',
-  },
   originalPrice: {
     fontSize: 11,
     color: Colors.TEXT_SECONDARY,
@@ -225,7 +243,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginBottom: Spacing.S,
+    marginBottom: 4,
+    marginTop: 2,
     gap: Spacing.S,
   },
   ratingBadge: {
@@ -241,14 +260,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   offerBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
     borderWidth: 0.5,
-    borderColor: 'rgba(255, 122, 59, 0.5)',
+    borderColor: 'rgba(16, 185, 129, 0.5)',
   },
   offerText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     color: Colors.LIGHT_BACKGROUND,
     letterSpacing: 0.2,
@@ -256,22 +275,21 @@ const styles = StyleSheet.create({
   productDescription: {
     fontSize: Typography.CAPTION,
     color: Colors.TEXT_SECONDARY,
-    marginBottom: Spacing.S,
+    marginBottom: 4,
     lineHeight: 18,
     maxHeight: 36,
   },
   benefitsSection: {
-    flexDirection: 'row',
-    gap: Spacing.XS,
-    marginBottom: Spacing.M,
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    gap: 4,
+    marginBottom: 6,
   },
   benefitBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255, 122, 59, 0.4)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 0,
+    paddingVertical: 2,
   },
   benefitText: {
     fontSize: 10,
@@ -281,12 +299,12 @@ const styles = StyleSheet.create({
   membershipBenefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(255, 122, 59, 0.08)',
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
     borderRadius: 8,
     borderLeftWidth: 3,
-    marginVertical: 6,
+    marginVertical: 3,
     gap: 6,
   },
   membershipBenefitText: {
@@ -296,21 +314,24 @@ const styles = StyleSheet.create({
   },
   buttonSection: {
     marginTop: 'auto',
-    paddingTop: Spacing.S,
+    paddingTop: 4,
   },
   addToCartBtn: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.L,
     borderRadius: 10,
-    gap: 6,
+    overflow: 'hidden',
     shadowColor: '#FF7A3B',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+  },
+  addToCartBtnContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.L,
+    gap: 6,
   },
   addToCartLabel: {
     color: Colors.LIGHT_BACKGROUND,

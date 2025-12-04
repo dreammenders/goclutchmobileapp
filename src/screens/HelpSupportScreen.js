@@ -48,8 +48,26 @@ const HelpSupportScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const handleContactPress = (method, value) => {
+    if (method === 'Phone') {
+      Linking.openURL(`tel:${value}`);
+    } else if (method === 'Email') {
+      Linking.openURL(`mailto:${value}`);
+    } else if (method === 'Chat') {
+      const whatsappNumber = '919133959551';
+      const message = encodeURIComponent('Hi! I need help with GoClutch services.');
+      const whatsappURL = `https://wa.me/${whatsappNumber}?text=${message}`;
+      Linking.openURL(whatsappURL).catch(() => {
+        alert('WhatsApp is not installed on your device');
+      });
+    }
+  };
+
   const renderContactMethod = ({ item }) => (
-    <TouchableOpacity style={styles.contactCard}>
+    <TouchableOpacity 
+      style={styles.contactCard}
+      onPress={() => handleContactPress(item.method, item.value)}
+    >
       <View style={styles.contactIcon}>
         <MaterialCommunityIcons name={item.icon} size={24} color={Colors.PRIMARY} />
       </View>

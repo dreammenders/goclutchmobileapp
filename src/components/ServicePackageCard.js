@@ -237,7 +237,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: Platform.OS === 'ios' ? 0 : 5, // Remove elevation on iOS for better shadow
-    margin: responsiveSize(14),
+    marginTop: 0,
+    marginBottom: responsiveSize(14),
     marginHorizontal: responsiveSize(16),
     overflow: 'hidden',
     // iOS specific shadow

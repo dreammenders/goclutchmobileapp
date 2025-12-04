@@ -191,7 +191,9 @@ const AccessoriesScreen = ({ navigation }) => {
                     style={styles.gradientBg}
                   />
                   <View style={styles.serviceIconWrapper}>
-                    <Ionicons name={service.icon} size={32} color={Colors.PRIMARY} />
+                    <View style={[styles.serviceIconBg, { backgroundColor: Colors.PRIMARY + '08' }]}>
+                      <Ionicons name={service.icon} size={32} color={Colors.PRIMARY} />
+                    </View>
                   </View>
                   <Text style={styles.serviceBoxName} numberOfLines={2}>
                     {service.name}
@@ -277,8 +279,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
   },
   categoryGrid: {
-    justifyContent: 'space-between',
-    gap: Spacing.M,
+    justifyContent: 'space-around',
+    gap: 4,
   },
 
   // Quick Services Section
@@ -304,7 +306,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.9)',
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 130,
+    minHeight: 110,
     justifyContent: 'center',
   },
   glassLayer: {
@@ -332,9 +334,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.XS,
   },
   serviceIconBg: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -553,16 +553,17 @@ const styles = StyleSheet.create({
   },
   servicesNavigator: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: Spacing.M,
+    paddingVertical: 0,
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
-    borderBottomWidth: 1,
+    paddingTop: Spacing.M,
+    borderBottomWidth: 0,
     borderBottomColor: '#E0E0E0',
   },
   navigatorTitle: {
     fontSize: responsiveSize(16),
     fontWeight: '600',
     color: '#000000',
-    marginBottom: Spacing.S,
+    marginBottom: Spacing.XS,
   },
   servicesScrollContent: {
     paddingRight: Spacing.SCREEN_HORIZONTAL,
@@ -670,7 +671,7 @@ const styles = StyleSheet.create({
 
   // Premium Services Section
   premiumServicesSection: {
-    marginTop: Spacing.XL,
+    marginTop: Spacing.M,
   },
   premiumServicesTitle: {
     fontSize: 18,
@@ -707,7 +708,7 @@ const styles = StyleSheet.create({
 
   // Single Banner Styles
   singleBannerContainer: {
-    marginTop: Spacing.L,
+    marginTop: Spacing.S,
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
     backgroundColor: '#FFF3E0',
     borderRadius: 16,
@@ -762,7 +763,7 @@ const styles = StyleSheet.create({
 
   // AC Banner Styles
   acBannerContainer: {
-    marginTop: Spacing.L,
+    marginTop: Spacing.S,
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
     backgroundColor: '#00BCD4',
     borderRadius: 16,

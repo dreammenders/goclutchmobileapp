@@ -75,7 +75,7 @@ const FloatingCartOverlay = () => {
   };
 
   // Don't render on cart screen itself and auth screens
-  const hideOnScreens = ['Cart', 'Auth'];
+  const hideOnScreens = ['Cart', 'Auth', 'PayNow'];
 
   if (hideOnScreens.includes(currentRoute) || totalItems === 0) {
     return null;
@@ -86,10 +86,11 @@ const FloatingCartOverlay = () => {
   return (
     <Animated.View
       style={[
-        styles.ribbon,
+        styles.floatingIcon,
         {
-          bottom: 56 + insets.bottom, // Above tab bar (56 is TAB_BAR_HEIGHT)
-          transform: [{ translateY: slideAnim.interpolate({
+          bottom: 80 + insets.bottom,
+          right: Spacing.M,
+          transform: [{ translateX: slideAnim.interpolate({
             inputRange: [0, 1],
             outputRange: [100, 0],
           })}, { scale: pulseAnim }],
@@ -97,32 +98,19 @@ const FloatingCartOverlay = () => {
       ]}
     >
       <TouchableOpacity
-        style={styles.cartRibbon}
+        style={styles.cartIcon}
         onPress={handleCartPress}
-        activeOpacity={0.9}
+        activeOpacity={0.8}
       >
-        <View style={styles.leftSection}>
-          <View style={styles.cartIconContainer}>
-            <MaterialCommunityIcons
-              name="cart-outline"
-              size={24}
-              color={Colors.LIGHT_BACKGROUND}
-            />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {totalItems > 99 ? '99+' : totalItems}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.itemCount}>
-              {totalItems} {totalItems === 1 ? 'item' : 'items'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.rightSection}>
-          <Text style={styles.viewAllText}>View All</Text>
+        <MaterialCommunityIcons
+          name="cart"
+          size={28}
+          color={Colors.LIGHT_BACKGROUND}
+        />
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>
+            {totalItems > 99 ? '99+' : totalItems}
+          </Text>
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -130,47 +118,33 @@ const FloatingCartOverlay = () => {
 };
 
 const styles = StyleSheet.create({
-  ribbon: {
+  floatingIcon: {
     position: 'absolute',
-    left: 0,
-    right: 0,
     zIndex: 1000,
   },
-  cartRibbon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  cartIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: Colors.PRIMARY,
-    marginHorizontal: Spacing.SCREEN_HORIZONTAL,
-    marginVertical: Spacing.S,
-    paddingHorizontal: Spacing.M,
-    paddingVertical: Spacing.M,
-    borderRadius: Spacing.BORDER_RADIUS_L,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: Colors.PRIMARY,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
     borderWidth: 2,
     borderColor: Colors.LIGHT_BACKGROUND,
   },
-  leftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  cartIconContainer: {
-    position: 'relative',
-    marginRight: Spacing.M,
-  },
   badge: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    minWidth: 20,
-    height: 20,
+    top: -6,
+    right: -6,
+    minWidth: 22,
+    height: 22,
     paddingHorizontal: 6,
-    borderRadius: 10,
+    borderRadius: 11,
     backgroundColor: '#FF6B35',
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,23 +155,6 @@ const styles = StyleSheet.create({
     color: Colors.LIGHT_BACKGROUND,
     fontSize: 10,
     fontWeight: '800',
-  },
-  textContainer: {
-    flex: 1,
-  },
-  itemCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.LIGHT_BACKGROUND,
-    opacity: 0.9,
-  },
-  rightSection: {
-    marginLeft: Spacing.S,
-  },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.LIGHT_BACKGROUND,
   },
 });
 

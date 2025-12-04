@@ -172,6 +172,7 @@ const defaultBanners = [
 const styles = StyleSheet.create({
   singleBannerWrapper: {
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
+    marginVertical: 0,
     borderRadius: Spacing.BORDER_RADIUS_L,
     overflow: 'hidden',
   },
@@ -182,15 +183,19 @@ const styles = StyleSheet.create({
     marginVertical: 0,
   },
   bannerSlide: {
+    margin: 0,
+    padding: 0,
   },
   bannerSlideContent: {
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
+    paddingVertical: 0,
   },
   bannerSlideImage: {
     paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   container: {
-    marginVertical: Spacing.XS,
+    marginVertical: 0,
   },
   banner: {
     borderRadius: Spacing.BORDER_RADIUS_L,
