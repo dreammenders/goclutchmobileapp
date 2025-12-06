@@ -1,24 +1,9 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 
-// Mobile API configuration - Auto-detect environment
+// Mobile API configuration - Always use production
 const getApiBaseUrl = () => {
-  if (__DEV__) {
-    // Development: Detect platform and use appropriate localhost
-    if (Platform.OS === 'android') {
-      // Android emulator uses 10.0.2.2 to reach host machine
-      return 'http://10.0.2.2:3002/api/v1';
-    } else if (Platform.OS === 'ios') {
-      // iOS simulator can use localhost
-      return 'http://192.168.1.36:3002/api/v1';
-    } else {
-      // Web or other platforms
-      return 'http://localhost:3002/api/v1';
-    }
-  } else {
-    // Production
-    return 'https://mobileapi.goclutchservice.in/api/v1';
-  }
+  return 'https://mobileapi.goclutchservice.in/api/v1';
 };
 
 const MOBILE_API_BASE_URL = getApiBaseUrl();
@@ -32,19 +17,29 @@ if (__DEV__) {
 // Create axios instance for mobile API
 const mobileApiClient = axios.create({
   baseURL: MOBILE_API_BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
   },
 });
 
-// Request interceptor - Log requests in development
+// Request interceptor - Log requests and add cache-busting
 mobileApiClient.interceptors.request.use(
   (config) => {
     if (__DEV__) {
       console.log('📤 API Request:', config.method?.toUpperCase(), config.url);
     }
+    
+    // Add cache-busting timestamp to GET requests
+    if (config.method === 'get') {
+      config.params = config.params || {};
+      config.params._t = Date.now();
+    }
+    
     return config;
   },
   (error) => {
@@ -257,6 +252,18 @@ export const serviceApi = {
       return response.data;
     } catch (error) {
       throw new Error(`Unable to load service from server: ${error.message}`);
+    }
+  },
+
+  /**
+   * Get service details including dynamic inclusions and features
+   */
+  getServiceDetails: async (serviceId) => {
+    try {
+      const response = await mobileApiClient.get(`/services/${serviceId}/details`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load service details from server: ${error.message}`);
     }
   },
 };
@@ -490,6 +497,7 @@ export default {
   getSpecialOffers: (...args) => specialOfferApi.getSpecialOffers(...args),
   getServices: (...args) => serviceApi.getServices(...args),
   getServiceById: (...args) => serviceApi.getServiceById(...args),
+  getServiceDetails: (...args) => serviceApi.getServiceDetails(...args),
   getPlans: (...args) => planApi.getPlans(...args),
   getPlanById: (...args) => planApi.getPlanById(...args),
   getPlansByService: (...args) => planApi.getPlansByService(...args),

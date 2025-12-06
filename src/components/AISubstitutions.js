@@ -205,12 +205,14 @@ const AISubstitutions = ({ unavailableService, onAcceptSubstitution, onDeclineSu
           <Text style={styles.substitutionReason}>{substitution.reason}</Text>
 
           <View style={styles.featuresContainer}>
-            {substitution.features.map((feature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <MaterialCommunityIcons name="check" size={14} color={Colors.SUCCESS} />
-                <Text style={styles.featureText}>{feature}</Text>
-              </View>
-            ))}
+            {Array.isArray(substitution.features) && substitution.features.length > 0 ? (
+              substitution.features.map((feature, index) => (
+                <View key={index} style={styles.featureItem}>
+                  <MaterialCommunityIcons name="check" size={14} color={Colors.SUCCESS} />
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))
+            ) : null}
           </View>
 
           <View style={styles.substitutionFooter}>

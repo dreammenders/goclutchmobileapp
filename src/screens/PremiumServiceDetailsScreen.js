@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Spacing';
+import mobileApi from '../api/mobileApi';
 import CarouselBanner from '../components/CarouselBanner';
 import FloatingCartOverlay from '../components/FloatingCartOverlay';
 import { useCart } from '../context/CartContext';
@@ -29,6 +30,34 @@ const responsiveSize = (size) => {
 const PremiumServiceDetailsScreen = ({ navigation, route }) => {
   const { service } = route.params || {};
   const insets = useSafeAreaInsets();
+  const [inclusions, setInclusions] = useState([]);
+  const [dynamicFeatures, setDynamicFeatures] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (service?.serviceId) {
+      fetchServiceDetails();
+    }
+  }, [service?.serviceId]);
+
+  const fetchServiceDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await mobileApi.getServiceDetails(service.serviceId);
+      
+      if (response?.success && response?.data) {
+        const { inclusions: incl, features: feat } = response.data;
+        setInclusions(Array.isArray(incl) ? incl : []);
+        setDynamicFeatures(Array.isArray(feat) ? feat : []);
+      }
+    } catch (error) {
+      console.error('Error fetching service details:', error);
+      setInclusions([]);
+      setDynamicFeatures([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!service) {
     return (
@@ -52,6 +81,9 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
     features = [],
     originalPrice,
     discountedPrice,
+    finalPrice,
+    sessionalOffPrice = 0,
+    sessionalOffText = '',
     discountPercentage,
     imageUrl,
     promoOffer,
@@ -60,54 +92,30 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
 
 
 
-  const calculateSavings = () => {
-    return originalPrice - discountedPrice;
+  // Safe price formatting helper
+  const formatPrice = (price) => {
+    try {
+      const num = Number(price) || 0;
+      return isNaN(num) ? '0' : num.toLocaleString();
+    } catch (err) {
+      console.error('Error formatting price:', err);
+      return '0';
+    }
   };
 
-  const whatsIncludedItems = [
-    {
-      id: 1,
-      title: 'Engine Oil Replacement',
-      description: 'Premium oil for optimal performance',
-      icon: '🔧',
-      imageUrl: require('../../assets/Stadard Service/Engine Oil Replacement.png'),
-    },
-    {
-      id: 2,
-      title: 'Oil Filter Replacement',
-      description: 'Clean filtration system',
-      icon: '👨‍🔧',
-      imageUrl: require('../../assets/Stadard Service/Oil Filter Replacement.png'),
-    },
-    {
-      id: 3,
-      title: 'Air Filter Replacement',
-      description: 'Improved air intake quality',
-      icon: '✓',
-      imageUrl: require('../../assets/Stadard Service/Air Filter Replacement.png'),
-    },
-    {
-      id: 4,
-      title: 'Brake Pads Service',
-      description: 'Enhanced safety and stopping power',
-      icon: '🛡️',
-      imageUrl: require('../../assets/Stadard Service/Brake Pads Service.png'),
-    },
-    {
-      id: 5,
-      title: 'AC Cabin Filter Clean',
-      description: 'Fresh cabin air circulation',
-      icon: '📞',
-      imageUrl: require('../../assets/Stadard Service/AC Cabin FIlter Clean.png'),
-    },
-    {
-      id: 6,
-      title: 'Coolant Top Up',
-      description: 'Optimal engine temperature control',
-      icon: '⏱️',
-      imageUrl: require('../../assets/Stadard Service/Coolat Top up.png'),
-    },
-  ];
+  const calculateSavings = () => {
+    try {
+      const original = Number(originalPrice) || 0;
+      const final = Number(finalPrice) || 0;
+      const savings = Math.max(0, original - final);
+      return isNaN(savings) ? 0 : savings;
+    } catch (err) {
+      console.error('Error calculating savings:', err);
+      return 0;
+    }
+  };
+
+
 
   const heroBanners = [
     {
@@ -224,7 +232,7 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
             <View>
               <Text style={styles.priceLabel}>Original Price</Text>
               <Text style={styles.originalPriceText}>
-                ₹{originalPrice.toLocaleString()}
+                ₹{formatPrice(originalPrice)}
               </Text>
             </View>
             <View style={styles.priceArrow}>
@@ -233,7 +241,7 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
             <View>
               <Text style={styles.priceLabel}>Your Price</Text>
               <Text style={styles.discountedPriceText}>
-                ₹{discountedPrice.toLocaleString()}
+                ₹{formatPrice(finalPrice)}
               </Text>
             </View>
           </View>
@@ -243,7 +251,7 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
             <View style={styles.savingsText}>
               <Text style={styles.savingsLabel}>You Save</Text>
               <Text style={styles.savingsAmount}>
-                ₹{calculateSavings().toLocaleString()}
+                ₹{formatPrice(calculateSavings())}
               </Text>
             </View>
           </View>
@@ -257,30 +265,48 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
           </View>
 
           {/* Images Grid - 3 columns */}
-          <View style={styles.imagesGrid}>
-            {whatsIncludedItems.map((item) => (
-              <View key={item.id} style={styles.imageGridItem}>
-                <View style={styles.imageBox}>
-                  <Image
-                    source={typeof item.imageUrl === 'string' ? { uri: item.imageUrl } : item.imageUrl}
-                    style={styles.includeImage}
-                    resizeMode="cover"
-                  />
-                </View>
-                <Text style={styles.imageTitle}>{item.title}</Text>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.PRIMARY} />
+              <Text style={styles.loadingText}>Loading details...</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.imagesGrid}>
+                {Array.isArray(inclusions) && inclusions.length > 0 ? (
+                  inclusions.map((item) => (
+                    <View key={item.id} style={styles.imageGridItem}>
+                      <View style={styles.imageBox}>
+                        <Image
+                          source={{ uri: item.image_url }}
+                          style={styles.includeImage}
+                          resizeMode="cover"
+                          onError={() => console.log(`Error loading image for ${item.title}`)}
+                        />
+                      </View>
+                      <Text style={styles.imageTitle}>{item.title}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noFeaturesText}>No inclusions available</Text>
+                )}
               </View>
-            ))}
-          </View>
 
-          {/* Features List */}
-          <View style={styles.featuresList}>
-            {features.map((feature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <View style={styles.featureDot} />
-                <Text style={styles.featureText}>{feature}</Text>
+              {/* Features List */}
+              <View style={styles.featuresList}>
+                {Array.isArray(dynamicFeatures) && dynamicFeatures.length > 0 ? (
+                  dynamicFeatures.map((feature, index) => (
+                    <View key={index} style={styles.featureItem}>
+                      <View style={styles.featureDot} />
+                      <Text style={styles.featureText}>{feature.title}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noFeaturesText}>No features available</Text>
+                )}
               </View>
-            ))}
-          </View>
+            </>
+          )}
         </View>
 
         {/* Benefits Section */}
@@ -516,7 +542,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2ECC71',
   },
-
   featuresSection: {
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
     marginVertical: Spacing.M,
@@ -537,6 +562,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.TEXT_PRIMARY,
     marginBottom: Spacing.M,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.XL,
+  },
+  loadingText: {
+    marginTop: Spacing.M,
+    fontSize: responsiveSize(14),
+    color: Colors.TEXT_SECONDARY,
+    fontWeight: '500',
   },
   imagesGrid: {
     flexDirection: 'row',
@@ -596,6 +632,13 @@ const styles = StyleSheet.create({
     color: Colors.TEXT_PRIMARY,
     flex: 1,
     lineHeight: responsiveSize(20),
+  },
+  noFeaturesText: {
+    fontSize: responsiveSize(13),
+    color: '#999',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: Spacing.M,
   },
   benefitsSection: {
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,

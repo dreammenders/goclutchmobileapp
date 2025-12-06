@@ -459,7 +459,11 @@ const HomeScreen = ({ navigation, route }) => {
   };
 
   const handleServicePress = (service) => {
-    navigation.navigate('ServiceDetails', { service });
+    navigation.navigate('ServiceDetails', {
+      service,
+      selectedModel: selectedVehicle?.model,
+      selectedVariant: selectedVehicle?.variant,
+    });
   };
 
   const ServiceCard = ({ service, gradientIndex, variant }) => {

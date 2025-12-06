@@ -65,31 +65,51 @@ const getColumnFlex = () => {
 };
 
 const ServicePackageCard = ({
-  isRecommended,
-  serviceTitle,
-  features,
-  originalPrice,
-  discountedPrice,
-  discountPercentage,
-  imageUrl,
-  promoOffer,
+  isRecommended = false,
+  serviceTitle = 'Service Plan',
+  features = [],
+  originalPrice = 0,
+  discountedPrice = 0,
+  discountPercentage = 0,
+  imageUrl = '',
+  promoOffer = {},
   sessionalOffPrice = 0,
-  sessionalOffText,
+  sessionalOffText = '',
   onPress,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const { addToCart } = useCart();
 
-  // Calculate discount amount (30% of original price)
-  const getDiscountAmount = () => {
-    return Math.round(originalPrice * 0.3);
+  // Safe price formatting helper
+  const formatPrice = (price) => {
+    try {
+      const num = Number(price) || 0;
+      return isNaN(num) ? '0' : num.toLocaleString();
+    } catch (err) {
+      console.error('Error formatting price:', err);
+      return '0';
+    }
   };
 
-  // Calculate final price after all discounts
+  // Calculate discount amount based on discount percentage
+  const getDiscountAmount = () => {
+    const price = Number(originalPrice) || 0;
+    const discount = Number(discountPercentage) || 0;
+    if (!price || !discount) return 0;
+    return Math.round((price * discount) / 100);
+  };
+
+  // Calculate final price after applying sessional off
   const getFinalPrice = () => {
-    const discountAmount = getDiscountAmount();
-    const winterOffer = 300;
-    return originalPrice - discountAmount - winterOffer;
+    try {
+      const discounted = Number(discountedPrice) || 0;
+      const sessionalOff = Number(sessionalOffPrice) || 0;
+      const finalPrice = Math.max(0, discounted - sessionalOff);
+      return isNaN(finalPrice) ? 0 : finalPrice;
+    } catch (err) {
+      console.error('Error calculating final price:', err);
+      return 0;
+    }
   };
 
   const handleAddToCart = () => {
@@ -162,14 +182,14 @@ const ServicePackageCard = ({
         {/* Content Column - Right Side */}
         <View style={styles.contentColumn}>
           {/* Service Title */}
-          <Text style={styles.serviceTitle}>{serviceTitle}</Text>
+          <Text style={styles.serviceTitle}>{String(serviceTitle || 'Service Plan')}</Text>
 
           {/* Bullet Points */}
           <View style={styles.bulletContainer}>
-            {features.map((feature, index) => (
+            {Array.isArray(features) && features.map((feature, index) => (
               <View key={index} style={styles.bulletPoint}>
                 <Text style={styles.bulletDot}>•</Text>
-                <Text style={styles.bulletText}>{feature}</Text>
+                <Text style={styles.bulletText}>{String(feature || '')}</Text>
               </View>
             ))}
           </View>
@@ -179,10 +199,10 @@ const ServicePackageCard = ({
             {/* Price Display */}
             <View style={styles.priceDisplay}>
               <View style={styles.pricesContainer}>
-                {originalPrice && <Text style={styles.originalPrice}>₹{originalPrice.toLocaleString()}</Text>}
-                {discountedPrice && <Text style={styles.discountedPrice}>₹{discountedPrice.toLocaleString()}</Text>}
+                {Number(originalPrice) > 0 && <Text style={styles.originalPrice}>₹{formatPrice(originalPrice)}</Text>}
+                {Number(discountedPrice) > 0 && <Text style={styles.discountedPrice}>₹{formatPrice(discountedPrice)}</Text>}
               </View>
-              <Text style={styles.discountInline}>{discountPercentage}% OFF</Text>
+              {Number(discountPercentage) > 0 && <Text style={styles.discountInline}>{Number(discountPercentage)}% OFF</Text>}
             </View>
 
             {/* Benefits */}
@@ -199,8 +219,10 @@ const ServicePackageCard = ({
       <View style={styles.offersRow}>
         <View style={styles.savingsText}>
           <MaterialCommunityIcons name="snowflake" size={responsiveSize(14)} color="#FFFFFF" />
-          <Text style={styles.savingsTextContent}>
-            {sessionalOffText ? `${sessionalOffText} - ₹${sessionalOffPrice}` : 'Winter OFF - 200'}
+          <Text style={styles.savingsTextContent} numberOfLines={1}>
+            {sessionalOffText && String(sessionalOffText)?.length > 0 
+              ? `${String(sessionalOffText)} - ₹${Number(sessionalOffPrice)}`
+              : 'Winter OFF - 200'}
           </Text>
         </View>
 
@@ -208,17 +230,19 @@ const ServicePackageCard = ({
           <View style={styles.coinIconContainer}>
             <MaterialCommunityIcons name="water" size={responsiveSize(14)} color="#FFFFFF" />
           </View>
-          <Text style={styles.coinsText}>FREE Coolant - 1L</Text>
+          <Text style={styles.coinsText} numberOfLines={1}>FREE Coolant - 1L</Text>
         </View>
       </View>
 
       {/* Full Width Separator Line */}
       <View style={styles.fullWidthSeparatorLine} />
 
-      {/* Final Discounted Price */}
-      <View style={styles.finalPriceContainer}>
-        <Text style={styles.finalPriceText}>Final Discounted Price - 3199</Text>
-      </View>
+      {/* Final Price after Sessional Off */}
+      {Number(discountedPrice) > 0 && (
+        <View style={styles.finalPriceContainer}>
+          <Text style={styles.finalPriceText}>Final Price: ₹{formatPrice(getFinalPrice())}</Text>
+        </View>
+      )}
 
     </TouchableOpacity>
   );
@@ -240,12 +264,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: Platform.OS === 'ios' ? 0 : 5, // Remove elevation on iOS for better shadow
+    elevation: Platform.OS === 'ios' ? 0 : 5,
     marginTop: 0,
     marginBottom: responsiveSize(14),
     marginHorizontal: responsiveSize(16),
     overflow: 'hidden',
-    // iOS specific shadow
     ...(Platform.OS === 'ios' && {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 3 },
@@ -349,21 +372,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#2ECC71',
-    paddingHorizontal: responsiveSize(12),
-    paddingVertical: responsiveSize(6),
+    paddingHorizontal: responsiveSize(6),
+    paddingVertical: responsiveSize(4),
     borderRadius: responsiveSize(6),
     borderWidth: 1,
     borderColor: '#2ECC71',
-    width: responsiveSize(150),
-    height: responsiveSize(36),
-    gap: responsiveSize(4),
+    flex: 2,
+    gap: responsiveSize(2),
     marginTop: 0,
+    minHeight: responsiveSize(30),
   },
   savingsTextContent: {
-    fontSize: responsiveSize(14),
-    fontWeight: 'bold',
+    fontSize: responsiveSize(10),
+    fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
+    flex: 1,
   },
   discountInline: {
     fontSize: responsiveSize(12),
@@ -380,23 +404,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F57C00',
-    paddingHorizontal: responsiveSize(12),
-    paddingVertical: responsiveSize(6),
+    paddingHorizontal: responsiveSize(5),
+    paddingVertical: responsiveSize(4),
     borderRadius: responsiveSize(6),
     alignSelf: 'center',
     marginTop: 0,
-    gap: responsiveSize(4),
+    gap: responsiveSize(2),
     borderWidth: 1,
     borderColor: '#F57C00',
-    width: responsiveSize(150),
-    height: responsiveSize(36),
+    flex: 1.2,
     justifyContent: 'center',
-    alignItems: 'center',
+    minHeight: responsiveSize(30),
   },
   coinsText: {
-    fontSize: responsiveSize(11),
-    fontWeight: 'bold',
+    fontSize: responsiveSize(10),
+    fontWeight: '600',
     color: '#FFFFFF',
+    textAlign: 'center',
+    flex: 1,
   },
 
   imageContainer: {
@@ -439,9 +464,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: responsiveSize(16),
-    paddingVertical: responsiveSize(10),
-    gap: responsiveSize(16),
+    paddingHorizontal: responsiveSize(8),
+    paddingVertical: responsiveSize(8),
+    gap: responsiveSize(6),
   },
 
   finalPriceContainer: {
