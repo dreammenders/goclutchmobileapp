@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Animated,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';

@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 // Mobile API configuration - Always use production
 const getApiBaseUrl = () => {
+  // Return Production URL
   return 'https://mobileapi.goclutchservice.in/api/v1';
 };
 
@@ -33,13 +34,13 @@ mobileApiClient.interceptors.request.use(
     if (__DEV__) {
       console.log('📤 API Request:', config.method?.toUpperCase(), config.url);
     }
-    
+
     // Add cache-busting timestamp to GET requests
     if (config.method === 'get') {
       config.params = config.params || {};
       config.params._t = Date.now();
     }
-    
+
     return config;
   },
   (error) => {
@@ -80,16 +81,16 @@ export const brandApi = {
   getBrands: async (params = {}) => {
     try {
       const { search, limit = 1000, offset = 0 } = params;
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       if (search && search.trim()) {
         queryParams.append('search', search.trim());
       }
-      
+
       const response = await mobileApiClient.get(`/brands?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -133,20 +134,20 @@ export const modelApi = {
   getModelsByBrand: async (brandId, params = {}) => {
     try {
       const { search, limit = 1000, offset = 0 } = params;
-      
+
       if (!brandId || brandId.toString().trim().length === 0) {
         throw new Error('Brand ID is required');
       }
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       if (search && search.trim()) {
         queryParams.append('search', search.trim());
       }
-      
+
       const response = await mobileApiClient.get(`/models/brand/${brandId}?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -180,6 +181,23 @@ export const variantApi = {
       return response.data;
     } catch (error) {
       throw new Error(`Unable to load variants from server: ${error.message}`);
+    }
+  },
+
+  /**
+   * Get variants filter by model
+   * Only uses real-time data from remote database
+   */
+  getVariantsByModel: async (modelId) => {
+    try {
+      if (!modelId || modelId.toString().trim().length === 0) {
+        throw new Error('Model ID is required');
+      }
+
+      const response = await mobileApiClient.get(`/variants/model/${modelId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Unable to load variants for this model: ${error.message}`);
     }
   },
 };
@@ -225,16 +243,16 @@ export const serviceApi = {
   getServices: async (params = {}) => {
     try {
       const { search, limit = 100, offset = 0 } = params;
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       if (search && search.trim()) {
         queryParams.append('search', search.trim());
       }
-      
+
       const response = await mobileApiClient.get(`/services?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -277,12 +295,12 @@ export const planApi = {
   getPlans: async (params = {}) => {
     try {
       const { limit = 100, offset = 0 } = params;
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       const response = await mobileApiClient.get(`/plans?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -313,14 +331,14 @@ export const planApi = {
       if (!serviceId || serviceId.toString().trim().length === 0) {
         throw new Error('Service ID is required');
       }
-      
+
       const { limit = 100, offset = 0 } = params;
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       const response = await mobileApiClient.get(`/plans/service/${serviceId}?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -341,14 +359,14 @@ export const planApi = {
       if (!variantId || variantId.toString().trim().length === 0) {
         throw new Error('Variant ID is required');
       }
-      
+
       const { serviceId, limit = 100, offset = 0 } = params;
-      
+
       let url = `/plans/model/${modelId}/variant/${variantId}?limit=${limit}&offset=${offset}`;
       if (serviceId) {
         url += `&serviceId=${serviceId}`;
       }
-      
+
       const response = await mobileApiClient.get(url);
       return response.data;
     } catch (error) {
@@ -365,12 +383,12 @@ export const serviceOfferApi = {
   getOffers: async (params = {}) => {
     try {
       const { limit = 100, offset = 0 } = params;
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       const response = await mobileApiClient.get(`/service-offers?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -386,7 +404,7 @@ export const serviceOfferApi = {
       if (!serviceId || serviceId.toString().trim().length === 0) {
         throw new Error('Service ID is required');
       }
-      
+
       const response = await mobileApiClient.get(`/service-offers/service/${serviceId}`);
       return response.data;
     } catch (error) {
@@ -403,12 +421,12 @@ export const serviceBannerApi = {
   getBanners: async (params = {}) => {
     try {
       const { limit = 100, offset = 0 } = params;
-      
+
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
         offset: offset.toString(),
       });
-      
+
       const response = await mobileApiClient.get(`/service-banners?${queryParams}`);
       return response.data;
     } catch (error) {
@@ -424,7 +442,7 @@ export const serviceBannerApi = {
       if (!serviceId || serviceId.toString().trim().length === 0) {
         throw new Error('Service ID is required');
       }
-      
+
       const response = await mobileApiClient.get(`/service-banners/service/${serviceId}`);
       return response.data;
     } catch (error) {
@@ -443,12 +461,12 @@ export const relatedServiceApi = {
       if (!serviceId || serviceId.toString().trim().length === 0) {
         throw new Error('Service ID is required');
       }
-      
+
       let url = `/related-services/service/${serviceId}`;
       if (type) {
         url += `?type=${type}`;
       }
-      
+
       const response = await mobileApiClient.get(url);
       return response.data;
     } catch (error) {
@@ -493,6 +511,7 @@ export default {
   getModelsByBrand: (...args) => modelApi.getModelsByBrand(...args),
   getModelById: (...args) => modelApi.getModelById(...args),
   getVariants: (...args) => variantApi.getVariants(...args),
+  getVariantsByModel: (...args) => variantApi.getVariantsByModel(...args),
   getPromotionalBanners: (...args) => promotionalBannerApi.getPromotionalBanners(...args),
   getSpecialOffers: (...args) => specialOfferApi.getSpecialOffers(...args),
   getServices: (...args) => serviceApi.getServices(...args),

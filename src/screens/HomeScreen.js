@@ -1263,24 +1263,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL - 4,
-    marginBottom: 12,
+    marginBottom: 4,
+    gap: 10,
   },
   compactServicesGrid: {
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL - 4,
-    paddingTop: 2,
-    paddingBottom: 2,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   compactServicesRow: {
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
+    gap: 10,
   },
   serviceCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
-    marginHorizontal: 6,
-    marginBottom: 16,
+    marginHorizontal: 4,
+    marginBottom: 8,
     minHeight: 150,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -1294,13 +1296,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   featuredServiceCard: {
-    marginHorizontal: 8,
-    padding: 18,
-    minHeight: 200,
+    marginHorizontal: 4,
+    marginBottom: 12,
+    padding: 12,
+    minHeight: 150,
   },
   compactServiceCard: {
     marginHorizontal: 4,
-    marginBottom: 12,
+    marginBottom: 8,
     padding: 12,
     minHeight: 120,
   },
@@ -1330,9 +1333,9 @@ const styles = StyleSheet.create({
     opacity: 0.15,
   },
   featuredServiceGradientBg: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     opacity: 0.2,
   },
   compactServiceGradientBg: {
@@ -1376,7 +1379,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   featuredServiceIconWrapper: {
-    marginBottom: 14,
+    marginBottom: 8,
   },
   compactServiceIconWrapper: {
     marginBottom: 8,
@@ -1401,9 +1404,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   featuredServiceIconBg: {
-    width: 78,
-    height: 78,
-    borderRadius: 26,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
   },
   compactServiceIconBg: {
     width: 56,
@@ -1433,9 +1436,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   featuredServiceImageContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 30,
+    width: 65,
+    height: 65,
+    borderRadius: 22,
   },
   compactServiceImageContainer: {
     width: 52,
@@ -1474,8 +1477,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   featuredServiceName: {
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 17,
+    lineHeight: 22,
   },
   compactServiceName: {
     fontSize: 16,

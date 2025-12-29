@@ -37,61 +37,117 @@ const ServiceCard = ({ service, gradientIndex, variant = 'compact', onPress }) =
                     variant === 'compact' && styles.gradientBgCompact,
                 ]}
             />
-            <View
-                style={[
-                    styles.iconWrapper,
-                    variant === 'featured' ? styles.iconWrapperFeatured : styles.iconWrapperCompact,
-                ]}
-            >
-                {service.image_url && typeof service.image_url === 'string' ? (
+            {variant === 'featured' ? (
+                <>
                     <View
                         style={[
-                            styles.imageContainer,
-                            variant === 'featured' && styles.imageContainerFeatured,
-                            variant === 'compact' && styles.imageContainerCompact,
+                            styles.iconWrapper,
+                            styles.iconWrapperFeatured,
                         ]}
                     >
-                        <LinearGradient
-                            colors={[...gradientColors.map((c) => c + '15')]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.imageBackdrop}
-                        />
-                        <Image
-                            source={{ uri: service.image_url }}
-                            style={[
-                                styles.image,
-                                variant === 'featured' && styles.imageFeatured,
-                                variant === 'compact' && styles.imageCompact,
-                            ]}
-                            resizeMode="contain"
-                        />
+                        {service.image_url && typeof service.image_url === 'string' ? (
+                            <View
+                                style={[
+                                    styles.imageContainer,
+                                    styles.imageContainerFeatured,
+                                ]}
+                            >
+                                <LinearGradient
+                                    colors={[...gradientColors.map((c) => c + '15')]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.imageBackdrop}
+                                />
+                                <Image
+                                    source={{ uri: service.image_url }}
+                                    style={[
+                                        styles.image,
+                                        styles.imageFeatured,
+                                    ]}
+                                    resizeMode="contain"
+                                />
+                            </View>
+                        ) : (
+                            <LinearGradient
+                                colors={gradientColors}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[
+                                    styles.iconBg,
+                                    isIconEnhanced && styles.iconBgLarge,
+                                    styles.iconBgFeatured,
+                                ]}
+                            >
+                                <Ionicons name="construct" size={iconSize} color="#FFFFFF" />
+                            </LinearGradient>
+                        )}
                     </View>
-                ) : (
-                    <LinearGradient
-                        colors={gradientColors}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
+                    <Text
                         style={[
-                            styles.iconBg,
-                            isIconEnhanced && styles.iconBgLarge,
-                            variant === 'featured' && styles.iconBgFeatured,
-                            variant === 'compact' && styles.iconBgCompact,
+                            styles.name,
+                            styles.nameFeatured,
+                        ]}
+                        numberOfLines={3}
+                    >
+                        {service.name}
+                    </Text>
+                </>
+            ) : (
+                <View style={styles.compactContent}>
+                    <View
+                        style={[
+                            styles.iconWrapper,
+                            styles.iconWrapperCompact,
                         ]}
                     >
-                        <Ionicons name="construct" size={iconSize} color="#FFFFFF" />
-                    </LinearGradient>
-                )}
-            </View>
-            <Text
-                style={[
-                    styles.name,
-                    variant === 'featured' ? styles.nameFeatured : styles.nameCompact,
-                ]}
-                numberOfLines={variant === 'featured' ? 3 : 2}
-            >
-                {service.name}
-            </Text>
+                        {service.image_url && typeof service.image_url === 'string' ? (
+                            <View
+                                style={[
+                                    styles.imageContainer,
+                                    styles.imageContainerCompact,
+                                ]}
+                            >
+                                <LinearGradient
+                                    colors={[...gradientColors.map((c) => c + '15')]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.imageBackdrop}
+                                />
+                                <Image
+                                    source={{ uri: service.image_url }}
+                                    style={[
+                                        styles.image,
+                                        styles.imageCompact,
+                                    ]}
+                                    resizeMode="contain"
+                                />
+                            </View>
+                        ) : (
+                            <LinearGradient
+                                colors={gradientColors}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[
+                                    styles.iconBg,
+                                    isIconEnhanced && styles.iconBgLarge,
+                                    styles.iconBgCompact,
+                                ]}
+                            >
+                                <Ionicons name="construct" size={iconSize} color="#FFFFFF" />
+                            </LinearGradient>
+                        )}
+                    </View>
+                    <Text
+                        style={[
+                            styles.name,
+                            styles.nameCompact,
+                        ]}
+                        numberOfLines={2}
+                    >
+                        {service.name}
+                    </Text>
+                </View>
+            )}
             <View style={styles.shimmerOverlay} />
         </TouchableOpacity>
     );
@@ -132,6 +188,13 @@ const styles = StyleSheet.create({
     gradientBgCompact: {
         opacity: 0.2,
     },
+    compactContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        flex: 1,
+    },
     iconWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -141,8 +204,10 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     iconWrapperCompact: {
-        marginTop: 16,
-        marginBottom: 8,
+        marginTop: 0,
+        marginBottom: 0,
+        marginRight: 6,
+        flexShrink: 0,
     },
     imageContainer: {
         borderRadius: 12,
@@ -201,7 +266,11 @@ const styles = StyleSheet.create({
     },
     nameCompact: {
         fontSize: 13,
-        marginBottom: 12,
+        marginBottom: 0,
+        textAlign: 'left',
+        paddingHorizontal: 0,
+        flex: 1,
+        fontWeight: '600',
     },
     shimmerOverlay: {
         ...StyleSheet.absoluteFillObject,

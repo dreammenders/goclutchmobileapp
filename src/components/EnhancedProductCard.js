@@ -11,158 +11,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { Spacing } from '../constants/Spacing';
 import { Typography } from '../constants/Typography';
-import { Responsive, responsiveSize } from '../constants/Responsive';
+import { responsiveSize } from '../constants/Responsive';
 
-const EnhancedProductCard = ({
-  id,
-  name,
-  price,
-  originalPrice,
-  rating,
-  image,
-  description,
-  benefits,
-  offer,
-  membershipBenefit,
-  cartItems,
-  onAddToCart,
-  onRemoveFromCart,
-  onIncrement,
-}) => {
-  const accentColor = '#FF7A3B';
-  
-  const calculateDiscount = () => {
-    const original = originalPrice || Math.round(price * 1.2);
-    const discount = Math.round(((original - price) / original) * 100);
-    return discount;
-  };
+const PRODUCT_GRADIENTS = [
+  ['#FF6B35', '#FF8C5A'],
+  ['#8B4513', '#A0522D'],
+  ['#00796B', '#004D40'],
+  ['#1E88E5', '#1565C0'],
+  ['#EC4899', '#DB2777'],
+  ['#10B981', '#059669'],
+];
 
-  return (
-    <View style={styles.card}>
-      {/* Left: Product Image */}
-      <View style={styles.imageColumn}>
-        <View style={[styles.imageGlow, { backgroundColor: `rgba(255, 122, 59, 0.08)` }]} />
-        <Image source={image} style={styles.productImage} resizeMode="contain" />
-        <View style={styles.imagePriceSection}>
-          <Text style={styles.imagePriceOriginal}>₹{originalPrice || Math.round(price * 1.2)}</Text>
-          <Text style={[styles.imagePrice, { color: '#1a1a1a' }]}>₹{price}</Text>
-          <View style={[styles.offerBadge, { backgroundColor: '#10B981' }]}>
-            <Text style={styles.offerText}>{calculateDiscount()}% OFF</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Right: Details Column */}
-      <View style={styles.detailsColumn}>
-        {/* Top: Title */}
-        <View style={styles.titleRow}>
-          <Text style={styles.productName} numberOfLines={2}>
-            {name}
-          </Text>
-        </View>
-
-        {/* Description */}
-        <Text style={styles.productDescription} numberOfLines={2}>
-          {description}
-        </Text>
-
-        {/* Benefits Badges */}
-        {benefits && benefits.length > 0 && (
-          <View style={styles.benefitsSection}>
-            {benefits.map((benefit) => (
-              <View
-                key={benefit}
-                style={styles.benefitBadge}
-              >
-                <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-                <Text style={[styles.benefitText, { color: Colors.TEXT_PRIMARY }]}>
-                  {benefit}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Rating & Offer Badge Row */}
-        <View style={styles.ratingRow}>
-          <View style={[styles.ratingBadge, { backgroundColor: `rgba(255, 122, 59, 0.15)` }]}>
-            <Ionicons name="star" size={12} color={accentColor} />
-            <Text style={[styles.rating, { color: accentColor }]}>{rating}</Text>
-          </View>
-          {benefits && benefits.length > 1 && (
-            <View style={[styles.ratingBadge, { backgroundColor: `rgba(16, 185, 129, 0.15)` }]}>
-              <Ionicons name="checkmark-circle" size={12} color="#10B981" />
-              <Text style={[styles.rating, { color: '#10B981' }]} numberOfLines={1}>{benefits[1]}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Membership Benefit Line */}
-        {membershipBenefit && (
-          <View style={[styles.membershipBenefitRow, { borderLeftColor: '#10B981' }]}>
-            <Ionicons name="star" size={12} color="#10B981" />
-            <Text style={[styles.membershipBenefitText, { color: '#10B981' }]}>
-              {membershipBenefit}
-            </Text>
-          </View>
-        )}
-
-        {/* Action Button */}
-        <View style={styles.buttonSection}>
-          {cartItems && cartItems[id] ? (
-            <View style={[styles.quantityControl, { borderColor: accentColor }]}>
-              <TouchableOpacity
-                style={[
-                  styles.quantityBtn,
-                  { backgroundColor: `rgba(255, 122, 59, 0.1)` },
-                ]}
-                onPress={() => onRemoveFromCart(id)}
-              >
-                <Ionicons name="remove" size={14} color={accentColor} />
-              </TouchableOpacity>
-              <Text style={styles.quantityValue}>{cartItems[id]}</Text>
-              <TouchableOpacity
-                style={[
-                  styles.quantityBtn,
-                  { backgroundColor: `rgba(255, 122, 59, 0.1)` },
-                ]}
-                onPress={() => onIncrement(id)}
-              >
-                <Ionicons name="add" size={14} color={accentColor} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <LinearGradient
-              colors={['#FF9966', '#FF7A3B']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.addToCartBtn}
-            >
-              <TouchableOpacity
-                style={styles.addToCartBtnContent}
-                onPress={() =>
-                  onAddToCart({
-                    id,
-                    name,
-                    price,
-                    image,
-                    description,
-                  })
-                }
-                activeOpacity={0.85}
-              >
-                <Ionicons name="cart" size={16} color="#FFFFFF" />
-                <Text style={[styles.addToCartLabel, { color: '#FFFFFF' }]}>Add to Cart</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-};
-
-const styles = StyleSheet.create({
+const getStyles = () => {
+  return StyleSheet.create({
   card: {
     flexDirection: 'row',
     borderRadius: responsiveSize(16),
@@ -367,6 +228,96 @@ const styles = StyleSheet.create({
     minWidth: 24,
     textAlign: 'center',
   },
-});
+  });
+};
+
+let styles = null;
+
+if (!styles) {
+  styles = getStyles();
+}
+
+const EnhancedProductCard = ({
+  id,
+  name,
+  price,
+  originalPrice,
+  rating,
+  image,
+  description,
+  benefits,
+  offer,
+  membershipBenefit,
+  cartItems,
+  onAddToCart,
+  onRemoveFromCart,
+  onIncrement,
+}) => {
+  
+  const gradientIndex = id.charCodeAt(0) % PRODUCT_GRADIENTS.length;
+  const gradientColors = PRODUCT_GRADIENTS[gradientIndex];
+  
+  const calculateDiscount = () => {
+    const original = originalPrice || Math.round(price * 1.2);
+    const discount = Math.round(((original - price) / original) * 100);
+    return discount;
+  };
+
+  return (
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.7}
+    >
+      <View style={styles.glassLayer} />
+      <LinearGradient
+        colors={[...gradientColors, 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBg}
+      />
+      
+      <View style={styles.cardContent}>
+        {/* Image Container */}
+        <View style={styles.imageContainer}>
+          <View
+            style={[
+              styles.imageBackdrop,
+              { backgroundColor: `${gradientColors[0]}15` }
+            ]}
+          />
+          <Image source={image} style={styles.productImage} resizeMode="contain" />
+        </View>
+
+        {/* Product Name */}
+        <Text style={styles.productName} numberOfLines={2}>
+          {name}
+        </Text>
+
+        {/* Price Section */}
+        <View style={styles.priceSection}>
+          <Text style={styles.priceOriginal}>₹{originalPrice || Math.round(price * 1.2)}</Text>
+          <Text style={styles.price}>₹{price}</Text>
+        </View>
+
+        {/* Discount Badge */}
+        <View style={[styles.discountBadge, { backgroundColor: gradientColors[0] }]}>
+          <Text style={styles.discountText}>{calculateDiscount()}% OFF</Text>
+        </View>
+
+        {/* Rating */}
+        {rating && (
+          <View style={styles.ratingBadge}>
+            <Ionicons name="star" size={12} color={gradientColors[0]} />
+            <Text style={[styles.ratingText, { color: gradientColors[0] }]}>
+              {rating}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.shimmerOverlay} />
+    </TouchableOpacity>
+  );
+};
 
 export default EnhancedProductCard;

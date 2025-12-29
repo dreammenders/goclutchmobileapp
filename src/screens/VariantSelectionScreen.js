@@ -8,16 +8,42 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/Colors';
 import mobileApi from '../api/mobileApi';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const STORAGE_KEYS = {
   SELECTED_VEHICLE: '@selected_vehicle',
+};
+
+const VARIANT_COLORS = {
+  petrol: {
+    primary: '#FF6B35',
+    light: '#FFE8D6',
+    accent: '#FF8C5A',
+  },
+  diesel: {
+    primary: '#8B4513',
+    light: '#E8DCC8',
+    accent: '#A0522D',
+  },
+  cng: {
+    primary: '#00796B',
+    light: '#B2DFDB',
+    accent: '#004D40',
+  },
+  electric: {
+    primary: '#1E88E5',
+    light: '#C5E1FF',
+    accent: '#1565C0',
+  },
 };
 
 const VariantSelectionScreen = ({ navigation, route }) => {
@@ -38,7 +64,15 @@ const VariantSelectionScreen = ({ navigation, route }) => {
     try {
       setIsLoading(true);
 
-      const result = await mobileApi.getVariants();
+      // Use model-specific variant fetching if model is selected
+      let result;
+      if (selectedModel && selectedModel.id) {
+        console.log('Fetching variants for model:', selectedModel.id);
+        result = await mobileApi.getVariantsByModel(selectedModel.id);
+      } else {
+        // Fallback to all variants if no model selected (shouldn't happen in flow)
+        result = await mobileApi.getVariants();
+      }
 
       if (result.success) {
         setVariants(result.data.variants);
@@ -101,65 +135,63 @@ const VariantSelectionScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const renderVariantItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.variantCard,
-        selectedVariant?.id === item.id && styles.variantCardSelected
-      ]}
-      onPress={() => handleVariantSelect(item)}
-      activeOpacity={0.7}
-    >
-      <LinearGradient
-        colors={
-          selectedVariant?.id === item.id
-            ? ['#E8F5E9', '#F1F8E9']
-            : ['#FFFFFF', '#FAFAFA']
-        }
-        style={styles.variantGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+  const renderVariantItem = ({ item }) => {
+    const fuelType = item.fuel_type.toLowerCase();
+    const variantColor = VARIANT_COLORS[fuelType] || VARIANT_COLORS.petrol;
+    const isSelected = selectedVariant?.id === item.id;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.variantCard,
+          isSelected && styles.variantCardSelected,
+        ]}
+        onPress={() => handleVariantSelect(item)}
+        activeOpacity={0.7}
       >
-        <View style={styles.variantIcon}>
-          <Ionicons
-            name={getFuelIcon(item.fuel_type)}
-            size={32}
-            color={selectedVariant?.id === item.id ? Colors.PRIMARY : Colors.TEXT_SECONDARY}
-          />
-        </View>
-        <Text
-          style={[
-            styles.variantName,
-            selectedVariant?.id === item.id && styles.variantNameSelected
-          ]}
+        <LinearGradient
+          colors={
+            isSelected
+              ? [variantColor.light, variantColor.light]
+              : ['#FFFFFF', '#FAFAFA']
+          }
+          style={styles.variantGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          {item.name}
-        </Text>
-        <Text
-          style={[
-            styles.variantType,
-            selectedVariant?.id === item.id && styles.variantTypeSelected
-          ]}
-        >
-          {item.fuel_type.toUpperCase()}
-        </Text>
-        {selectedVariant?.id === item.id && (
-          <View style={styles.selectedBadge}>
-            <Ionicons name="checkmark-circle" size={24} color={Colors.PRIMARY} />
+          <View style={[styles.variantIcon, { backgroundColor: isSelected ? variantColor.primary : 'transparent' }]}>
+            <MaterialCommunityIcons
+              name={getFuelIcon(fuelType)}
+              size={48}
+              color={isSelected ? '#FFFFFF' : variantColor.primary}
+            />
           </View>
-        )}
-      </LinearGradient>
-    </TouchableOpacity>
-  );
+          <Text
+            style={[
+              styles.variantName,
+              isSelected && { color: variantColor.primary }
+            ]}
+          >
+            {item.name}
+          </Text>
+          {isSelected && (
+            <View style={styles.selectedBadge}>
+              <Ionicons name="checkmark-circle" size={24} color={variantColor.primary} />
+            </View>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
 
   const getFuelIcon = (fuelType) => {
     const icons = {
-      petrol: 'water',
-      diesel: 'business',
-      cng: 'flame',
-      electric: 'flash'
+      petrol: 'gas-station',
+      diesel: 'fuel',
+      cng: 'gas-cylinder',
+      electric: 'ev-station'
     };
-    return icons[fuelType.toLowerCase()] || 'settings';
+    return icons[fuelType.toLowerCase()] || 'car-cog';
   };
 
   if (isLoading) {
@@ -188,12 +220,12 @@ const VariantSelectionScreen = ({ navigation, route }) => {
               <Ionicons name="arrow-back" size={22} color={Colors.TEXT_PRIMARY} />
             </View>
           </TouchableOpacity>
-          
+
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Select Variant</Text>
             <Text style={styles.headerSubtitle}>Step 3 of 3</Text>
           </View>
-          
+
           <View style={styles.headerRight}>
             <View style={styles.progressIndicator}>
               <View style={styles.progressDot} />
@@ -284,17 +316,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: screenWidth < 380 ? 16 : 20,
+    paddingTop: screenWidth < 380 ? 12 : 16,
+    paddingBottom: screenWidth < 380 ? 16 : 20,
   },
   backButton: {
-    marginRight: 12,
+    marginRight: screenWidth < 380 ? 8 : 12,
   },
   backButtonCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: screenWidth < 380 ? 40 : 44,
+    height: screenWidth < 380 ? 40 : 44,
+    borderRadius: screenWidth < 380 ? 20 : 22,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -306,13 +338,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: screenWidth < 380 ? 18 : 20,
     fontWeight: '700',
     color: Colors.TEXT_PRIMARY,
     letterSpacing: 0.3,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: screenWidth < 380 ? 10 : 12,
     fontWeight: '500',
     color: Colors.TEXT_SECONDARY,
     marginTop: 2,
@@ -342,51 +374,45 @@ const styles = StyleSheet.create({
   },
   vehicleInfoSection: {
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
+    paddingTop: screenWidth < 380 ? 8 : 12,
+    paddingBottom: screenWidth < 380 ? 12 : 16,
+    paddingHorizontal: screenWidth < 380 ? 12 : 16,
     backgroundColor: Colors.LIGHT_BACKGROUND,
     borderBottomWidth: 1,
     borderBottomColor: Colors.BORDER_LIGHT,
   },
   vehicleImageContainer: {
-    width: 160,
-    height: 160,
+    width: screenWidth < 380 ? 120 : 160,
+    height: screenWidth < 380 ? 120 : 160,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: screenWidth < 380 ? 4 : 8,
   },
   vehicleImage: {
     width: '100%',
     height: '100%',
   },
-  brandName: {
-    fontSize: 16,
-    color: Colors.TEXT_SECONDARY,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
   modelName: {
-    fontSize: 24,
+    fontSize: screenWidth < 380 ? 20 : 24,
     fontWeight: 'bold',
     color: Colors.TEXT_PRIMARY,
-    marginBottom: 8,
+    marginBottom: screenWidth < 380 ? 4 : 8,
   },
   instructionText: {
-    fontSize: 14,
+    fontSize: screenWidth < 380 ? 12 : 14,
     color: Colors.TEXT_SECONDARY,
-    marginTop: 8,
+    marginTop: screenWidth < 380 ? 4 : 8,
   },
   variantsList: {
-    padding: 16,
+    padding: screenWidth < 380 ? 12 : 16,
   },
   columnWrapper: {
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: screenWidth < 380 ? 12 : 16,
   },
   variantCard: {
     flex: 1,
-    marginHorizontal: 6,
+    marginHorizontal: screenWidth < 380 ? 4 : 6,
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 2,
@@ -401,35 +427,34 @@ const styles = StyleSheet.create({
     elevation: 6,
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    borderColor: Colors.PRIMARY,
+    borderWidth: 2,
   },
   variantGradient: {
-    padding: 20,
+    padding: screenWidth < 380 ? 16 : 20,
     alignItems: 'center',
-    minHeight: 160,
+    minHeight: screenWidth < 380 ? 140 : 160,
     justifyContent: 'center',
   },
   variantIcon: {
-    marginBottom: 12,
+    marginBottom: 16,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   variantName: {
-    fontSize: 18,
+    fontSize: screenWidth < 380 ? 14 : 18,
     fontWeight: 'bold',
     color: Colors.TEXT_PRIMARY,
     marginBottom: 4,
     textAlign: 'center',
   },
-  variantNameSelected: {
-    color: Colors.PRIMARY,
-  },
   variantType: {
-    fontSize: 12,
+    fontSize: screenWidth < 380 ? 11 : 12,
     color: Colors.TEXT_SECONDARY,
     fontWeight: '500',
     textAlign: 'center',
-  },
-  variantTypeSelected: {
-    color: Colors.SECONDARY,
   },
   selectedBadge: {
     position: 'absolute',
@@ -437,7 +462,7 @@ const styles = StyleSheet.create({
     right: 8,
   },
   continueButtonContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: screenWidth < 380 ? 12 : 16,
     paddingTop: 12,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 0,
@@ -460,12 +485,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingVertical: screenWidth < 380 ? 14 : 16,
+    paddingHorizontal: screenWidth < 380 ? 24 : 32,
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: screenWidth < 380 ? 16 : 18,
     fontWeight: 'bold',
     marginRight: 8,
   },

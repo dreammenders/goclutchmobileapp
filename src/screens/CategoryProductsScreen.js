@@ -14,7 +14,7 @@ import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import { Spacing } from '../constants/Spacing';
 import { useCart } from '../context/CartContext';
-import EnhancedProductCard from '../components/EnhancedProductCard';
+import ProductCard from '../components/ProductCard';
 
 const CATEGORY_MEDIA = {
   '1': require('../../assets/accessories/lubricant.png'),
@@ -335,22 +335,19 @@ const CategoryProductsScreen = ({ navigation, route }) => {
   }, [allProducts, selectedBrand]);
 
   const renderProductItem = ({ item }) => {
+    const discountMatch = item.offer?.match(/(\d+)%/);
+    const discount = discountMatch ? parseInt(discountMatch[1], 10) : 0;
+
     return (
-      <EnhancedProductCard
+      <ProductCard
         id={item.id}
         name={item.name}
         price={item.price}
-        originalPrice={item.originalPrice}
         rating={item.rating}
-        image={item.image}
-        description={item.description}
-        benefits={item.benefits}
-        offer={item.offer}
-        membershipBenefit={item.membershipBenefit}
-        cartItems={cartItems}
-        onAddToCart={addToCart}
-        onRemoveFromCart={removeFromCart}
-        onIncrement={addToCart}
+        imageUrl={item.image}
+        discount={discount}
+        originalPrice={item.originalPrice}
+        onPress={() => {}}
       />
     );
   };
@@ -417,6 +414,7 @@ const CategoryProductsScreen = ({ navigation, route }) => {
             scrollIndicatorInsets={{ right: 1 }}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={renderListHeader}
+            numColumns={1}
           />
         </View>
       </View>
@@ -461,6 +459,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.XXL,
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
     paddingTop: Spacing.M,
+    paddingRight: Spacing.SCREEN_HORIZONTAL,
   },
   listHeaderWrapper: {
     marginBottom: Spacing.M,
@@ -721,6 +720,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF7A3B',
     flex: 1,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    gap: Spacing.M,
   },
 });
 

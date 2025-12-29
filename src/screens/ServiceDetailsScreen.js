@@ -61,36 +61,40 @@ const getServiceGradient = (index) => {
 const ServiceDetailsScreen = ({ navigation, route }) => {
   const service = route.params?.service;
   let { modelId, variantId } = route.params || {};
-  
+
   // Get model and variant from parent navigator params if not passed directly
   const parentParams = route?.params || navigation?.getState?.()?.routes?.[navigation?.getState?.()?.index]?.params || {};
   const selectedModel = parentParams?.selectedModel || modelId;
   const selectedVariant = parentParams?.selectedVariant || variantId;
-  
+
   modelId = selectedModel?.id || modelId;
   variantId = selectedVariant?.id || variantId;
   const [plans, setPlans] = useState([]);
   const [banners, setBanners] = useState([]);
   const [heroBanners, setHeroBanners] = useState([]);
   const [benefits, setBenefits] = useState([]);
+  const [whyChooseItems, setWhyChooseItems] = useState([]);
+  const [specialOffers, setSpecialOffers] = useState([]);
+  const [activeOfferIndex, setActiveOfferIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [allServices, setAllServices] = useState([]);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [plansServiceId, setPlansServiceId] = useState(null);
   const serviceBannerFlatListRef = React.useRef(null);
+  const offerFlatListRef = React.useRef(null);
 
   const loadPlans = useCallback(async () => {
     try {
       const currentService = route.params?.service;
       const serviceId = currentService?.id;
-      
+
       if (!serviceId) {
         setPlans([]);
         return;
       }
-      
+
       setPlans([]);
-      
+
       let result;
       if (modelId && variantId && String(modelId).trim() && String(variantId).trim()) {
         try {
@@ -101,7 +105,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
       } else {
         result = await mobileApi.getPlansByService(serviceId);
       }
-      
+
       const newPlans = result?.data?.plans || [];
       setPlans(newPlans);
       setPlansServiceId(serviceId);
@@ -147,6 +151,49 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
     }
   }, [service?.id]);
 
+  const loadWhyChooseItems = useCallback(async () => {
+    try {
+      if (service?.id) {
+        const result = await mobileApi.getServiceBannersByService(service.id);
+        const whyChooseData = (result?.data?.banners || []).filter(b => b?.type === 'why_choose');
+        setWhyChooseItems(Array.isArray(whyChooseData) ? whyChooseData : []);
+      }
+    } catch (error) {
+      setWhyChooseItems([]);
+    }
+  }, [service?.id]);
+
+  const fetchSpecialOffers = useCallback(async () => {
+    try {
+      const result = await mobileApi.getSpecialOffers();
+      if (result.success && result.data && result.data.offers && result.data.offers.length > 0) {
+        const offerGradientOptions = [
+          ['#FF6B6B', '#C92A2A'],
+          ['#51CF66', '#2F9E44'],
+          ['#339AF0', '#1864AB'],
+          ['#DA77F2', '#9C36B5'],
+          ['#FFA94D', '#E67700'],
+          ['#FF8787', '#FA5252'],
+        ];
+
+        const transformedOffers = result.data.offers.map((offer, index) => ({
+          id: offer.id,
+          title: offer.title || 'Special Offer',
+          subtitle: offer.description || '',
+          discount: offer.discount_percentage ? `${offer.discount_percentage}% OFF` : '',
+          image_url: offer.image_url,
+          gradient: offerGradientOptions[index % offerGradientOptions.length],
+        }));
+
+        setSpecialOffers(transformedOffers);
+      } else {
+        setSpecialOffers([]);
+      }
+    } catch (error) {
+      setSpecialOffers([]);
+    }
+  }, []);
+
   const loadAllServices = useCallback(async () => {
     try {
       const result = await mobileApi.getServices();
@@ -163,13 +210,15 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
         loadBanners(),
         loadHeroBanners(),
         loadBenefits(),
+        loadWhyChooseItems(),
+        fetchSpecialOffers(),
         loadAllServices()
       ]);
     } catch (error) {
     } finally {
       setLoading(false);
     }
-  }, [loadPlans, loadBanners, loadHeroBanners, loadBenefits, loadAllServices]);
+  }, [loadPlans, loadBanners, loadHeroBanners, loadBenefits, loadWhyChooseItems, fetchSpecialOffers, loadAllServices]);
 
 
 
@@ -181,7 +230,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
       setHeroBanners([]);
       setBenefits([]);
       setLoading(true);
-      
+
       setTimeout(() => {
         loadServiceData();
       }, 0);
@@ -221,13 +270,25 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
   }, []);
 
   const calculateFinalPrice = useCallback((plan) => {
+    // 1. Get the base "original" price (Strikethrough price)
     const cutoffPrice = Number(plan?.original_price) || Number(plan?.price) || 0;
+
+    // 2. Determine the "Selling Price" before seasonal offers
+    // Use backend calculated discount_price if available, otherwise fallback to price, then original_price
+    let finalPrice = Number(plan?.discount_price) || Number(plan?.price) || cutoffPrice;
+
+    // 3. If client-side percentage calculation is needed (e.g. data consistency check)
     const discountPercentage = Number(plan?.discount_percentage) || 0;
-    const discountAmount = discountPercentage > 0 ? Math.round((cutoffPrice * discountPercentage) / 100) : 0;
+    if (discountPercentage > 0 && cutoffPrice > 0) {
+      // Recalculate to ensure UI consistency with percentage badge
+      finalPrice = Math.round(cutoffPrice - (cutoffPrice * discountPercentage / 100));
+    }
+
     const result = {
       cutoffPrice: Math.max(0, cutoffPrice),
-      discountAmount: Math.max(0, discountAmount),
-      finalPrice: Math.max(0, cutoffPrice - discountAmount)
+      // discountAmount is difference between original and final (before seasonal)
+      discountAmount: Math.max(0, cutoffPrice - finalPrice),
+      finalPrice: Math.max(0, finalPrice)
     };
     return result;
   }, []);
@@ -237,14 +298,14 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
     const pricing = calculateFinalPrice(plan);
     const sessionalOffPrice = Number(plan.sessional_off_price) || 0;
     const finalPriceAfterSessionalOff = Math.max(0, (pricing.finalPrice || 0) - sessionalOffPrice);
-    
+
     console.log('🎯 [handleViewDetails] Current service:', currentService?.id, currentService?.name);
     console.log('   Plan:', plan.name, 'Price:', plan.price);
     console.log('   Pricing - cutoff:', pricing.cutoffPrice, 'final:', pricing.finalPrice);
-    
+
     const detailedData = {
       serviceTitle: String(plan.name || 'Service Plan'),
-      features: (plan.description && typeof plan.description === 'string') 
+      features: (plan.description && typeof plan.description === 'string')
         ? plan.description.split('\n').filter(item => item?.trim?.().length > 0).map(f => String(f))
         : [],
       originalPrice: pricing.cutoffPrice || 0,
@@ -255,7 +316,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
       discountPercentage: plan.discount_percentage || 0,
       imageUrl: plan.image_url || '',
       promoOffer: {
-        title: (plan.duration_months && plan.warranty_months) 
+        title: (plan.duration_months && plan.warranty_months)
           ? `Validity: ${plan.duration_months} months | Warranty: ${plan.warranty_months} months`
           : 'Service Package',
         cashback: "Go Clutch Coin Cashback",
@@ -375,7 +436,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
               if (!quickService || !quickService.id) return null;
               const isActive = String(quickService.name) === String(service?.name);
               const gradientColors = getServiceGradient(index);
-              
+
               return (
                 <TouchableOpacity
                   key={quickService.id}
@@ -415,10 +476,10 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
                         end={{ x: 1, y: 1 }}
                         style={styles.quickServiceIconBg}
                       >
-                        <MaterialCommunityIcons 
-                          name={String(quickService.icon || 'wrench')} 
-                          size={32} 
-                          color="#FFFFFF" 
+                        <MaterialCommunityIcons
+                          name={String(quickService.icon || 'wrench')}
+                          size={32}
+                          color="#FFFFFF"
                         />
                       </LinearGradient>
                     )}
@@ -491,7 +552,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
           let contentArray = [];
           if (banner.banner_content) {
             try {
-              const parsed = typeof banner.banner_content === 'string' 
+              const parsed = typeof banner.banner_content === 'string'
                 ? JSON.parse(banner.banner_content)
                 : banner.banner_content;
               contentArray = Array.isArray(parsed) ? parsed : [];
@@ -525,42 +586,99 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
           );
         })}
 
-        {/* Service Benefits Section - Dynamic */}
-        {Array.isArray(benefits) && benefits.length > 0 && (
-          <View style={styles.premiumLayout}>
-            <View style={styles.benefitsSection}>
-              <Text style={styles.benefitsTitle}>{String(service?.name || 'Service')} Benefits</Text>
-              <View style={styles.benefitsGrid}>
-                {benefits.map((benefit, index) => {
-                  if (!benefit) return null;
-                  let benefitContent = [];
-                  if (benefit.banner_content) {
-                    try {
-                      const parsed = typeof benefit.banner_content === 'string'
-                        ? JSON.parse(benefit.banner_content)
-                        : benefit.banner_content;
-                      benefitContent = Array.isArray(parsed) ? parsed : [];
-                    } catch (e) {
-                      benefitContent = [];
-                    }
-                  }
-                  
-                  return (
-                    <View key={benefit.id || index} style={styles.benefitItem}>
-                      <View style={styles.benefitIcon}>
-                        <MaterialCommunityIcons 
-                          name={benefit.icon_name || 'shield-check'} 
-                          size={24} 
-                          color={Colors.PRIMARY} 
-                        />
-                      </View>
-                      {benefit.title && <Text style={styles.benefitTitle}>{String(benefit.title)}</Text>}
-                      {benefit.description && <Text style={styles.benefitDesc}>{String(benefit.description)}</Text>}
-                    </View>
-                  );
-                })}
+        {/* Why Choose Our Services Section */}
+        <View style={styles.whyChooseSection}>
+          <View style={styles.whyChooseTitleContainer}>
+            <MaterialCommunityIcons name="star-circle" size={responsiveSize(24)} color={Colors.PRIMARY} />
+            <Text style={styles.whyChooseTitle}>Why Choose Our {service?.name || 'Services'}?</Text>
+          </View>
+
+          <View style={styles.whyChooseGrid}>
+            {Array.isArray(whyChooseItems) && whyChooseItems.length > 0 ? (
+              whyChooseItems.map((item, index) => (
+                <View key={item.id || index} style={styles.whyChooseCard}>
+                  <View style={styles.whyChooseCardIcon}>
+                    <MaterialCommunityIcons
+                      name={item.icon_name || 'star'}
+                      size={responsiveSize(32)}
+                      color={Colors.PRIMARY}
+                    />
+                  </View>
+                  <Text style={styles.whyChooseCardText}>{String(item.title || '')}</Text>
+                </View>
+              ))
+            ) : (
+              <>
+                <View style={styles.whyChooseCard}>
+                  <View style={styles.whyChooseCardIcon}>
+                    <MaterialCommunityIcons
+                      name="package-variant-closed-check"
+                      size={responsiveSize(32)}
+                      color={Colors.PRIMARY}
+                    />
+                  </View>
+                  <Text style={styles.whyChooseCardText}>Genuine parts</Text>
+                </View>
+
+                <View style={styles.whyChooseCard}>
+                  <View style={styles.whyChooseCardIcon}>
+                    <MaterialCommunityIcons
+                      name="lightning-bolt"
+                      size={responsiveSize(32)}
+                      color={Colors.PRIMARY}
+                    />
+                  </View>
+                  <Text style={styles.whyChooseCardText}>Quick service</Text>
+                </View>
+
+                <View style={styles.whyChooseCard}>
+                  <View style={styles.whyChooseCardIcon}>
+                    <MaterialCommunityIcons
+                      name="shield-check"
+                      size={responsiveSize(32)}
+                      color={Colors.PRIMARY}
+                    />
+                  </View>
+                  <Text style={styles.whyChooseCardText}>Warranty</Text>
+                </View>
+
+                <View style={styles.whyChooseCard}>
+                  <View style={styles.whyChooseCardIcon}>
+                    <MaterialCommunityIcons
+                      name="account-tie"
+                      size={responsiveSize(32)}
+                      color={Colors.PRIMARY}
+                    />
+                  </View>
+                  <Text style={styles.whyChooseCardText}>Expert technicians</Text>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+
+        {/* Special Offers Carousel - Only show if offers are available */}
+        {specialOffers.length > 1 && (
+          <View style={styles.specialOffersSectionContainer}>
+            {specialOffers[1] && (
+              <View style={styles.specialOfferCard}>
+                <LinearGradient
+                  colors={specialOffers[1].gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.offerGradientBg}
+                >
+                  {specialOffers[1].image_url && (
+                    <Image
+                      source={{ uri: specialOffers[1].image_url }}
+                      style={styles.offerImage}
+                      resizeMode="cover"
+                    />
+                  )}
+
+                </LinearGradient>
               </View>
-            </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -966,6 +1084,127 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.TEXT_PRIMARY,
     marginLeft: Spacing.S,
+  },
+  whyChooseSection: {
+    marginTop: 0,
+    marginBottom: Spacing.L,
+    marginHorizontal: Spacing.SCREEN_HORIZONTAL,
+    paddingVertical: Spacing.M,
+  },
+  whyChooseTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.M,
+    gap: Spacing.S,
+  },
+  whyChooseTitle: {
+    fontSize: responsiveSize(18),
+    fontWeight: '700',
+    color: Colors.TEXT_PRIMARY,
+    flex: 1,
+  },
+  whyChooseGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: Spacing.M,
+  },
+  whyChooseCard: {
+    width: '47%',
+    backgroundColor: '#F9F9F9',
+    borderRadius: responsiveSize(12),
+    padding: Spacing.M,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  whyChooseCardIcon: {
+    width: responsiveSize(56),
+    height: responsiveSize(56),
+    borderRadius: responsiveSize(28),
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.S,
+  },
+  whyChooseCardText: {
+    fontSize: responsiveSize(13),
+    fontWeight: '600',
+    color: Colors.TEXT_PRIMARY,
+    textAlign: 'center',
+  },
+  noIncludedText: {
+    fontSize: responsiveSize(14),
+    color: Colors.TEXT_MUTED,
+    textAlign: 'center',
+    paddingVertical: Spacing.L,
+  },
+  specialOffersSectionContainer: {
+    marginTop: 0,
+    marginBottom: Spacing.M,
+    backgroundColor: '#FFFFFF',
+  },
+
+  specialOfferCard: {
+    width: screenWidth - responsiveSize(32),
+    marginHorizontal: responsiveSize(16),
+    height: responsiveSize(200),
+    borderRadius: responsiveSize(12),
+    overflow: 'hidden',
+  },
+  offerGradientBg: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  offerImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  offerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.M,
+  },
+  offerDiscount: {
+    fontSize: responsiveSize(28),
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  offerTitle: {
+    fontSize: responsiveSize(18),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: Spacing.S,
+  },
+  offerSubtitle: {
+    fontSize: responsiveSize(14),
+    fontWeight: '500',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: Spacing.XS,
+  },
+  offerPaginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Spacing.M,
+    gap: Spacing.S,
+  },
+  paginationDot: {
+    width: responsiveSize(8),
+    height: responsiveSize(8),
+    borderRadius: responsiveSize(4),
+    backgroundColor: Colors.PRIMARY,
   },
 });
 

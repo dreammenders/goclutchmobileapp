@@ -292,6 +292,16 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
                 )}
               </View>
 
+              {/* Extra Go Clutch Services Section */}
+              {Array.isArray(dynamicFeatures) && dynamicFeatures.length > 0 && (
+                <View style={styles.extraServicesSection}>
+                  <View style={styles.extraServicesTitleContainer}>
+                    <MaterialCommunityIcons name="star-circle" size={responsiveSize(24)} color={Colors.PRIMARY} />
+                    <Text style={styles.extraServicesTitle}>Extra Go Clutch Services</Text>
+                  </View>
+                </View>
+              )}
+
               {/* Features List */}
               <View style={styles.featuresList}>
                 {Array.isArray(dynamicFeatures) && dynamicFeatures.length > 0 ? (
@@ -344,6 +354,7 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
             )}
             keyExtractor={(item) => item.id}
             horizontal
+            scrollEnabled={false}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.benefitCarouselContent}
             scrollEventThrottle={16}
@@ -364,7 +375,10 @@ const PremiumServiceDetailsScreen = ({ navigation, route }) => {
         </View>
 
         <View style={styles.testimonialsSection}>
-          <Text style={styles.sectionTitleLarge}>Customer Testimonials</Text>
+          <View style={styles.sectionHeaderLarge}>
+            <MaterialCommunityIcons name="chat-outline" size={28} color={Colors.PRIMARY} />
+            <Text style={styles.sectionTitleLarge}>Customer Testimonials</Text>
+          </View>
           <FlatList
             data={testimonials}
             keyExtractor={(item) => item.id}
@@ -491,8 +505,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9F9F9',
     borderRadius: responsiveSize(12),
     padding: Spacing.M,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderWidth: 1.5,
+    borderColor: '#FF9800',
   },
   priceRow: {
     flexDirection: 'row',
@@ -544,7 +558,8 @@ const styles = StyleSheet.create({
   },
   featuresSection: {
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
-    marginVertical: Spacing.M,
+    marginTop: 0,
+    marginBottom: Spacing.M,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -557,11 +572,16 @@ const styles = StyleSheet.create({
     color: Colors.TEXT_PRIMARY,
     marginLeft: Spacing.S,
   },
+  sectionHeaderLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
   sectionTitleLarge: {
     fontSize: responsiveSize(16),
     fontWeight: '700',
     color: Colors.TEXT_PRIMARY,
-    marginBottom: Spacing.M,
+    marginLeft: Spacing.S,
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -578,7 +598,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: Spacing.L,
+    marginBottom: 0,
   },
   imageGridItem: {
     width: '31%',
@@ -606,13 +626,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: responsiveSize(16),
   },
+  extraServicesSection: {
+    marginTop: Spacing.M,
+    marginBottom: Spacing.S,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  extraServicesTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: Spacing.S,
+  },
+  extraServicesTitle: {
+    fontSize: responsiveSize(18),
+    fontWeight: '700',
+    color: Colors.TEXT_PRIMARY,
+    flex: 1,
+  },
   featuresList: {
     backgroundColor: '#F9F9F9',
     borderRadius: responsiveSize(12),
     padding: Spacing.M,
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    marginTop: Spacing.M,
+    marginTop: 0,
   },
   featureItem: {
     flexDirection: 'row',
@@ -642,14 +680,16 @@ const styles = StyleSheet.create({
   },
   benefitsSection: {
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
-    marginVertical: Spacing.M,
+    marginTop: 0,
+    marginBottom: Spacing.M,
   },
   benefitCarouselContent: {
     paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
     gap: Spacing.M,
   },
   benefitCarouselItem: {
-    width: (screenWidth - Spacing.SCREEN_HORIZONTAL * 2 - Spacing.M * 2) / 3,
+    width: (screenWidth - Spacing.SCREEN_HORIZONTAL * 2 - Spacing.M * 4) / 3,
+    height: responsiveSize(120),
     backgroundColor: '#F9F9F9',
     borderRadius: responsiveSize(12),
     padding: Spacing.M,
@@ -668,11 +708,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.S,
   },
   benefitCarouselLabel: {
-    fontSize: responsiveSize(12),
+    fontSize: responsiveSize(11),
     fontWeight: '600',
     color: Colors.TEXT_PRIMARY,
     textAlign: 'center',
-    lineHeight: responsiveSize(16),
+    lineHeight: responsiveSize(13),
   },
   subscriptionBannerContainer: {
     justifyContent: 'center',
@@ -694,10 +734,11 @@ const styles = StyleSheet.create({
   },
   testimonialsSection: {
     marginHorizontal: Spacing.SCREEN_HORIZONTAL,
-    marginBottom: Spacing.L,
+    marginBottom: 0,
   },
   testimonialCarouselContent: {
-    paddingVertical: Spacing.S,
+    paddingTop: Spacing.S,
+    paddingBottom: 0,
     paddingRight: Spacing.SCREEN_HORIZONTAL,
   },
   testimonialCard: {

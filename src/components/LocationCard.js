@@ -12,106 +12,8 @@ import { Spacing } from '../constants/Spacing';
 import { Typography } from '../constants/Typography';
 import { responsiveSize } from '../constants/Responsive';
 
-const LocationCard = ({ onRefresh }) => {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    
-    // Rotate animation
-    Animated.timing(rotateAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start(() => {
-      rotateAnim.setValue(0);
-      setIsRefreshing(false);
-    });
-
-    // Call the refresh callback
-    if (onRefresh) {
-      onRefresh();
-    }
-  };
-
-  const rotateInterpolate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Location</Text>
-        <TouchableOpacity
-          onPress={handleRefresh}
-          disabled={isRefreshing}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Animated.View
-            style={{
-              transform: [{ rotate: rotateInterpolate }],
-            }}
-          >
-            <Ionicons
-              name="refresh"
-              size={20}
-              color={Colors.PRIMARY}
-            />
-          </Animated.View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Location Info */}
-      <View style={styles.locationInfo}>
-        <View style={styles.locationPin}>
-          <Ionicons name="location" size={24} color={Colors.PRIMARY} />
-        </View>
-        <View style={styles.locationDetails}>
-          <Text style={styles.locationName}>Current Location</Text>
-          <Text style={styles.locationAddress}>
-            Indiranagar, Bangalore
-          </Text>
-          <Text style={styles.locationCoords}>
-            GPS: 12.9716° N, 77.6412° E
-          </Text>
-        </View>
-      </View>
-
-      {/* Service Center Info */}
-      <View style={styles.divider} />
-
-      <View style={styles.serviceInfo}>
-        <View style={styles.serviceHeader}>
-          <View style={styles.serviceBadge}>
-            <Ionicons name="storefront" size={16} color={Colors.LIGHT_BACKGROUND} />
-          </View>
-          <Text style={styles.serviceTitle}>Nearest Service Center</Text>
-        </View>
-        <Text style={styles.serviceName}>
-          Go Clutch - Premium Service Hub
-        </Text>
-        <Text style={styles.serviceDetails}>
-          Indiranagar Branch • 2.3 km away
-        </Text>
-        <View style={styles.etaContainer}>
-          <Ionicons name="time" size={16} color={Colors.WARNING} />
-          <Text style={styles.etaText}>Estimated arrival: 15 mins</Text>
-        </View>
-      </View>
-
-      {/* Action Button */}
-      <TouchableOpacity style={styles.actionButton}>
-        <Ionicons name="navigate" size={20} color={Colors.LIGHT_BACKGROUND} />
-        <Text style={styles.actionText}>Navigate</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const styles = StyleSheet.create({
+const getStyles = () => {
+  return StyleSheet.create({
   container: {
     backgroundColor: Colors.CARD_BACKGROUND,
     borderRadius: Spacing.BORDER_RADIUS_L,
@@ -241,6 +143,113 @@ const styles = StyleSheet.create({
     color: Colors.LIGHT_BACKGROUND,
     marginLeft: Spacing.S,
   },
-});
+  });
+};
+
+let styles = null;
+
+if (!styles) {
+  styles = getStyles();
+}
+
+const LocationCard = ({ onRefresh }) => {
+  
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    
+    // Rotate animation
+    Animated.timing(rotateAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start(() => {
+      rotateAnim.setValue(0);
+      setIsRefreshing(false);
+    });
+
+    // Call the refresh callback
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Your Location</Text>
+        <TouchableOpacity
+          onPress={handleRefresh}
+          disabled={isRefreshing}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Animated.View
+            style={{
+              transform: [{ rotate: rotateInterpolate }],
+            }}
+          >
+            <Ionicons
+              name="refresh"
+              size={20}
+              color={Colors.PRIMARY}
+            />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Location Info */}
+      <View style={styles.locationInfo}>
+        <View style={styles.locationPin}>
+          <Ionicons name="location" size={24} color={Colors.PRIMARY} />
+        </View>
+        <View style={styles.locationDetails}>
+          <Text style={styles.locationName}>Current Location</Text>
+          <Text style={styles.locationAddress}>
+            Indiranagar, Bangalore
+          </Text>
+          <Text style={styles.locationCoords}>
+            GPS: 12.9716° N, 77.6412° E
+          </Text>
+        </View>
+      </View>
+
+      {/* Service Center Info */}
+      <View style={styles.divider} />
+
+      <View style={styles.serviceInfo}>
+        <View style={styles.serviceHeader}>
+          <View style={styles.serviceBadge}>
+            <Ionicons name="storefront" size={16} color={Colors.LIGHT_BACKGROUND} />
+          </View>
+          <Text style={styles.serviceTitle}>Nearest Service Center</Text>
+        </View>
+        <Text style={styles.serviceName}>
+          Go Clutch - Premium Service Hub
+        </Text>
+        <Text style={styles.serviceDetails}>
+          Indiranagar Branch • 2.3 km away
+        </Text>
+        <View style={styles.etaContainer}>
+          <Ionicons name="time" size={16} color={Colors.WARNING} />
+          <Text style={styles.etaText}>Estimated arrival: 15 mins</Text>
+        </View>
+      </View>
+
+      {/* Action Button */}
+      <TouchableOpacity style={styles.actionButton}>
+        <Ionicons name="navigate" size={20} color={Colors.LIGHT_BACKGROUND} />
+        <Text style={styles.actionText}>Navigate</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default LocationCard;

@@ -47,6 +47,10 @@ const CarouselBanner = ({ banners = defaultBanners, autoPlayInterval = 4000 }) =
   const safeWindowWidth = windowWidth || 400;
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollViewRef = useRef(null);
+  
+  if (!styles) {
+    styles = getStyles();
+  }
 
   useEffect(() => {
     try {
@@ -169,97 +173,106 @@ const defaultBanners = [
   },
 ];
 
-const styles = StyleSheet.create({
-  singleBannerWrapper: {
-    marginHorizontal: Spacing.SCREEN_HORIZONTAL,
-    marginVertical: 0,
-    borderRadius: Spacing.BORDER_RADIUS_L,
-    overflow: 'hidden',
-  },
-  singleBannerWrapperImage: {
-    alignSelf: 'center',
-  },
-  carouselContainer: {
-    marginVertical: 0,
-  },
-  bannerSlide: {
-    margin: 0,
-    padding: 0,
-  },
-  bannerSlideContent: {
-    paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
-    paddingVertical: 0,
-  },
-  bannerSlideImage: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  container: {
-    marginVertical: 0,
-  },
-  banner: {
-    borderRadius: Spacing.BORDER_RADIUS_L,
-    padding: Spacing.L,
-    minHeight: responsiveSize(180),
-    justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: responsiveSize(3) },
-    shadowOpacity: 0.15,
-    shadowRadius: responsiveSize(6),
-    elevation: 4,
-  },
-  bannerImageWrapper: {
-    aspectRatio: 16 / 9,
-    borderRadius: Spacing.BORDER_RADIUS_L,
-    overflow: 'hidden',
-    alignSelf: 'center',
-  },
-  bannerImageFull: {
-    width: '100%',
-    height: '100%',
-  },
-  decorativeCircle: {
-    position: 'absolute',
-    width: responsiveSize(180),
-    height: responsiveSize(180),
-    borderRadius: responsiveSize(90),
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    right: responsiveSize(-80),
-    top: responsiveSize(-50),
-  },
-  bannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  iconWrapper: {
-    width: responsiveSize(70),
-    height: responsiveSize(70),
-    borderRadius: responsiveSize(16),
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.L,
-  },
-  bannerIcon: {
-    fontSize: responsiveSize(52),
-  },
-  bannerText: {
-    flex: 1,
-  },
-  bannerTitle: {
-    fontSize: Typography.HEADING_S,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: Spacing.XS,
-  },
-  bannerSubtitle: {
-    fontSize: Typography.BODY_S,
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: Typography.LINE_HEIGHT_NORMAL * Typography.BODY_S,
-    fontWeight: '500',
-  },
-});
+const getStyles = () => {
+  const baseSize = 180;
+  const decorativeSize = 180;
+  const iconSize = 70;
+  const bannerIconSize = 52;
+
+  return StyleSheet.create({
+    singleBannerWrapper: {
+      marginHorizontal: Spacing.SCREEN_HORIZONTAL,
+      marginVertical: 0,
+      borderRadius: Spacing.BORDER_RADIUS_L,
+      overflow: 'hidden',
+    },
+    singleBannerWrapperImage: {
+      alignSelf: 'center',
+    },
+    carouselContainer: {
+      marginVertical: 0,
+    },
+    bannerSlide: {
+      margin: 0,
+      padding: 0,
+    },
+    bannerSlideContent: {
+      paddingHorizontal: Spacing.SCREEN_HORIZONTAL,
+      paddingVertical: 0,
+    },
+    bannerSlideImage: {
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+    },
+    container: {
+      marginVertical: 0,
+    },
+    banner: {
+      borderRadius: Spacing.BORDER_RADIUS_L,
+      padding: Spacing.L,
+      minHeight: responsiveSize(baseSize),
+      justifyContent: 'center',
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: responsiveSize(3) },
+      shadowOpacity: 0.15,
+      shadowRadius: responsiveSize(6),
+      elevation: 4,
+    },
+    bannerImageWrapper: {
+      aspectRatio: 16 / 9,
+      borderRadius: Spacing.BORDER_RADIUS_L,
+      overflow: 'hidden',
+      alignSelf: 'center',
+    },
+    bannerImageFull: {
+      width: '100%',
+      height: '100%',
+    },
+    decorativeCircle: {
+      position: 'absolute',
+      width: responsiveSize(decorativeSize),
+      height: responsiveSize(decorativeSize),
+      borderRadius: responsiveSize(90),
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      right: responsiveSize(-80),
+      top: responsiveSize(-50),
+    },
+    bannerContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      zIndex: 1,
+    },
+    iconWrapper: {
+      width: responsiveSize(iconSize),
+      height: responsiveSize(iconSize),
+      borderRadius: responsiveSize(16),
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: Spacing.L,
+    },
+    bannerIcon: {
+      fontSize: responsiveSize(bannerIconSize),
+    },
+    bannerText: {
+      flex: 1,
+    },
+    bannerTitle: {
+      fontSize: Typography.HEADING_S,
+      fontWeight: '800',
+      color: '#FFFFFF',
+      marginBottom: Spacing.XS,
+    },
+    bannerSubtitle: {
+      fontSize: Typography.BODY_S,
+      color: 'rgba(255, 255, 255, 0.9)',
+      lineHeight: Typography.LINE_HEIGHT_NORMAL * Typography.BODY_S,
+      fontWeight: '500',
+    },
+  });
+};
+
+let styles = null;
 
 export default CarouselBanner;
